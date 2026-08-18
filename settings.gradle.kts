@@ -20,3 +20,7 @@ dependencyResolutionManagement {
 
 include(":ktor-role-based-auth")
 include(":crypto")
+include(":shared-oidc")
+include(":oidc-auth-core")
+include(":oidc-auth-client")
+include(":oidc-auth-server")

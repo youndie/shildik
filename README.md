@@ -10,9 +10,9 @@
 The parts of [shildik](https://github.com/youndie) — an identity provider written in Kotlin — that
 are useful without shildik itself.
 
-Two libraries so far. Both exist because the JVM answer to the same problem does not compile for
+Six modules so far. They exist because the JVM answer to the same problems does not compile for
 Kotlin/Native, and a service that moves to a native binary should not have to give up token
-verification or route-level authorization to get there.
+verification, service tokens or route-level authorization to get there.
 
 ## `crypto` — JOSE without a JOSE library
 
@@ -54,10 +54,54 @@ Grown from [omkar-tenkale/ktor-role-based-auth](https://github.com/omkar-tenkale
 (Unlicense), rewritten for Ktor 3, with the JWT dependency dropped and the optional-authentication
 behaviour pinned by a test.
 
+## `oidc-auth-*` — talking to the provider
+
+Three small modules that a Ktor service uses to live with an OIDC provider. All multiplatform, so
+a service on Kotlin/Native keeps the same code.
+
+Verifying tokens:
+
+```kotlin
+configureAuth(oidcConfig) { (roles, _, azp) ->
+    azp == "orders-api" && "orders:read" in roles
+}
+
+routing {
+    authenticate(JWT_AUTH_OIDC) {
+        get("/orders") { call.principal<OidcPrincipal>() }
+    }
+}
+```
+
+The validator checks the signature and the expiry and fetches JWKS itself with a day-long cache.
+`iss` is deliberately **not** checked: during a provider migration a service has to accept tokens
+from both, and two key sources live side by side until the old one is gone.
+
+Getting a service token, and a client that carries it:
+
+```kotlin
+val auth = OidcAuthService(oidcConfig)
+val neighbour = provideClient(auth, oidcConfig, endpoint = "orders-api:8080/internal")
+```
+
+The token is cached and refreshed a minute before it expires; a 401 from the neighbour triggers a
+refresh and one retry.
+
+| Module | What it is |
+|---|---|
+| `shared-oidc` | the wire contract: addresses as Ktor resources, response models |
+| `oidc-auth-core` | connection settings — `OidcConfig` |
+| `oidc-auth-client` | a service token via `client_credentials`, plus `provideClient` |
+| `oidc-auth-server` | the token validator for a Ktor service |
+
+The address shape follows Keycloak (`/realms/{realm}/protocol/openid-connect/…`). That is
+deliberate rather than accidental: it let services and libraries already speaking to one provider
+be pointed at another without touching their configuration.
+
 ## Targets
 
-`jvm`, `linuxX64`, `linuxArm64`, `macosArm64` for `crypto`; `ktor-role-based-auth` is JVM, because
-Ktor's authentication plugin is.
+`jvm`, `linuxX64`, `linuxArm64` and `macosArm64` for everything except `ktor-role-based-auth`,
+which is JVM, because Ktor's authentication plugin is.
 
 ## Add it
 
@@ -69,6 +113,8 @@ repositories {
 dependencies {
     implementation("ru.workinprogress.shildik:crypto:$version")
     implementation("ru.workinprogress.shildik:ktor-role-based-auth:$version")
+    implementation("ru.workinprogress.shildik:oidc-auth-client:$version")
+    implementation("ru.workinprogress.shildik:oidc-auth-server:$version")
 }
 ```
 
