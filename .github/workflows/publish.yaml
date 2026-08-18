@@ -1,0 +1,38 @@
+name: Publish
+
+# Manual only. These artifacts are consumed by other projects, and a version appearing in the
+# registry because someone pushed a README fix is how a registry fills up with noise.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v6
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      # The version is `0.1.0.<run number>`: monotonic, traceable back to a run, and impossible to
+      # produce twice by accident.
+      - name: Publish to snapshots
+        run: ./gradlew publishAllPublicationsToReposiliteRepository -PVERSION=0.1.0.${{ github.run_number }}
+        env:
+          REPOSILITE_USER: ${{ secrets.REPOSILITE_USER }}
+          REPOSILITE_SECRET: ${{ secrets.REPOSILITE_SECRET }}
