@@ -32,20 +32,23 @@ installation, not a provider.
 | `auth-google` | sign-in through Google |
 | `auth-magic-link` | sign-in by a link from an email, verified from a handoff token |
 | `cli` | a native `shildik` binary for the management port |
+| `server-boot` | shared start-up: the environment, the configuration, both engines |
+| `distribution` | a reference `main()` — the thing the published image is built from |
 
 Assembling a distribution is the consumer's `main()` — the recipe is
 [docs/thin-server.md](docs/thin-server.md):
 
 ```kotlin
-val server = shildikServer(
-    config = ShildikConfig(issuer = "https://id.example.com", /* … */),
-    storage = { config -> sqlx4kStorageModule(config.jdbcUrl, config.dbUser, config.dbPassword) },
-)
-server.start(wait = true)
+fun main() =
+    runShildik(
+        storage = { config -> sqlx4kStorageModule(config.jdbcUrl, config.dbUser, config.dbPassword) },
+    ) {
+        listOf(PasswordAuthMethod(get(), get(), get(), get()))
+    }
 ```
 
-Sign-in methods are handed to the graph the same way — by listing them. A build without
-`auth-password` has no password sign-in, and no configuration can bring it back.
+That is the whole file. A build without `auth-google` among its **dependencies** has no Google
+sign-in — not disabled, absent, and no environment variable or Helm value can bring it back.
 
 Two ports, always: the public contour serves tokens, JWKS, discovery and the sign-in page; the
 management contour serves `/admin` and is never exposed. They are two Ktor engines rather than one
@@ -150,9 +153,10 @@ which of them a given provider serves is its business, and the libraries no long
 
 ## Targets
 
-`jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with two exceptions: `ktor-role-based-auth` is
-JVM, because Ktor's authentication plugin is; `storage-sqlx4k` is JVM and `linuxX64`, which is what
-the driver publishes.
+`jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with three exceptions: `ktor-role-based-auth` is
+JVM, because Ktor's authentication plugin is; `storage-sqlx4k` and `server-boot` are JVM and
+`linuxX64`, which is what the database driver publishes; `distribution` is `linuxX64` alone,
+because it exists to become a container.
 
 ## Run one
 
@@ -210,15 +214,21 @@ dependencies {
 ## Development
 
 ```bash
-./gradlew check     # build, ktlint, tests on JVM and on a native target
+./gradlew check                  # build, ktlint, tests on the JVM and on a native target
+./gradlew :distribution:image    # the reference container, built locally
+helm lint charts/shildik --set issuer=https://id.example.com \
+  --set database.jdbcUrl=jdbc:postgresql://pg:5432/shildik --set ingress.host=id.example.com
 ```
 
 ## Status
 
 Early in the open, not early in life. This code runs in production: it replaced Keycloak for a
 platform whose owners sign in through it every day, and it has been through a migration of users, a
-move to Kotlin/Native and a PostgreSQL major upgrade. What is new is the packaging — the module
-boundaries and the published API may still move.
+move to Kotlin/Native and a PostgreSQL major upgrade. Three pods hold 45–48 MiB resident, measured
+by monitoring over a twenty-hour window rather than taken from a README.
+
+What is new is the packaging — the module boundaries, the published API, the image and the chart
+may still move.
 
 The documentation of the provider — the wire contract, the behaviour and the CLI — is in
 [docs/](docs/README.md). Deployment runbooks and the post-mortem of our own migration are not:
