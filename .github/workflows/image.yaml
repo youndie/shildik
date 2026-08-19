@@ -5,6 +5,10 @@ name: Image
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'version tag, e.g. 0.2.0.8 — leave empty to push only the commit tag'
+        type: string
+        required: false
       latest:
         description: also push :latest
         type: boolean
@@ -39,12 +43,25 @@ jobs:
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: konan-${{ runner.os }}-
 
-      # The version is the one the artifacts carry, so an image and the libraries inside it can be
-      # traced to the same run. `0.2.0.<run number>` of the publish workflow is not available here,
-      # so the image takes its own run number and says so in a label.
-      - name: Version
-        id: version
-        run: echo "value=0.2.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+      # **The commit tag is the one that is always right.** A run number of this workflow would
+      # look like a version and mean nothing: the libraries inside carry `0.2.0.<publish run>`, and
+      # the two counters have no reason to agree. An image built from a commit is named after that
+      # commit; a human-readable version is passed in when somebody decides there is one.
+      # Inputs travel through the environment rather than into the script text: a value
+      # interpolated into a shell line is a value that can end the line and start its own.
+      # The `if` blocks are not style either — `[ … ] && …` as the last command of a step exits
+      # non-zero when the condition is false, and the step fails for saying "no".
+      - name: Tags
+        id: tags
+        env:
+          VERSION: ${{ inputs.version }}
+          LATEST: ${{ inputs.latest }}
+          REPO: ghcr.io/${{ github.repository }}
+        run: |
+          tags="$REPO:sha-$(git rev-parse --short HEAD)"
+          if [ -n "$VERSION" ]; then tags="$tags,$REPO:$VERSION"; fi
+          if [ "$LATEST" = "true" ]; then tags="$tags,$REPO:latest"; fi
+          echo "value=$tags" >> "$GITHUB_OUTPUT"
 
       # Gradle builds the binary and assembles the context; docker only builds. Compiling inside
       # the Dockerfile would throw away the Gradle cache on every run.
@@ -70,9 +87,7 @@ jobs:
           platforms: linux/amd64
           push: true
           build-args: BINARY=shildik.kexe
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.value }}
-            ${{ inputs.latest && format('ghcr.io/{0}:latest', github.repository) || '' }}
+          tags: ${{ steps.tags.outputs.value }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=OpenID Connect provider — reference distribution
@@ -83,9 +98,9 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "### ghcr.io/${{ github.repository }}:${{ steps.version.outputs.value }}"
+            echo "### pushed"
             echo
-            echo '```bash'
-            echo "docker pull ghcr.io/${{ github.repository }}:${{ steps.version.outputs.value }}"
+            echo '```'
+            echo "${{ steps.tags.outputs.value }}" | tr ',' '\n'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
