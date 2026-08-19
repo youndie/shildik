@@ -17,8 +17,12 @@ import kotlinx.io.readString
  * both live databases are long past it. That the collapsed file yields the same schema as the
  * twelve steps did is checked by `SchemaParityTest`.
  *
- * **Files, not resources.** The directory is read from the filesystem rather than from a jar. For
- * the image that means a layer of its own for the migrations and a path in the configuration.
+ * **Read from the filesystem, shipped inside the artifact.** `migrate` takes a directory path:
+ * sqlx4k reads files, not resources, and on Kotlin/Native there is no classpath to read from
+ * anyway. The files nevertheless live in `commonMain/resources`, so the published jar carries the
+ * schema — a consumer of the artifact would otherwise have no way to obtain it. Getting them out
+ * is the build's job: resolve `storage-sqlx4k-jvm` as an artifact and unpack its `migrations`
+ * directory next to the binary — a `Sync` task over `zipTree` does it in four lines.
  *
  * **About the baseline.** Both live databases were already migrated by the previous tool: the
  * schema is in place and its history in its own table. An empty `_sqlx4k_migrations` would apply
