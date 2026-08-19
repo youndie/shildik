@@ -6,6 +6,7 @@ The provider's documentation: what it does, what it puts on the wire, and how it
 |---|---|---|
 | Feature | `features/` | what the system does and why, with the scenarios that count as acceptance |
 | API | `api/` | contracts: the protocol and the HTTP surface |
+| Running one | [`thin-server.md`](thin-server.md) | assembling a distribution of your own — two files |
 | Tooling | [`cli.md`](cli.md) | the admin CLI, its rules and its quirks |
 
 **The invariant: these documents describe what exists.** A plan lives in a task, not here; a
@@ -17,7 +18,8 @@ document says what it cost — the failures in here are the reason the rules abo
 * **A service that consumes tokens** — [api/protocol-oidc-subset](api/protocol-oidc-subset.md),
   then [features/feature-service-auth](features/feature-service-auth.md).
 * **A front end that signs people in** — [api/protocol-oidc-browser](api/protocol-oidc-browser.md).
-* **Running one** — [cli.md](cli.md) and [api/endpoint-admin](api/endpoint-admin.md).
+* **Running one** — [thin-server.md](thin-server.md) first, then [cli.md](cli.md) and
+  [api/endpoint-admin](api/endpoint-admin.md).
 * **Migrating from Keycloak** — [features/feature-user-import](features/feature-user-import.md),
   which is mostly about a mistake that costs an owner their account.
 

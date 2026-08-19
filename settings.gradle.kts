@@ -35,4 +35,9 @@ include(":server")
 include(":auth-password")
 include(":auth-google")
 include(":auth-magic-link")
+include(":server-boot")
 include(":cli")
+
+// A distribution, and the only module here that is an application rather than a library: it exists
+// so the repository can be run rather than only read.
+include(":distribution")
