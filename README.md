@@ -187,6 +187,6 @@ platform whose owners sign in through it every day, and it has been through a mi
 move to Kotlin/Native and a PostgreSQL major upgrade. What is new is the packaging — the module
 boundaries and the published API may still move.
 
-The documentation lives in the repository this came from and is being translated; until it lands
-here, the code carries its own reasons in comments, which is where the decisions are recorded
-anyway.
+The documentation of the provider — the wire contract, the behaviour and the CLI — is in
+[docs/](docs/README.md). Deployment runbooks and the post-mortem of our own migration are not:
+they describe an installation rather than a provider.
