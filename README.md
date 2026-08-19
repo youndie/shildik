@@ -33,7 +33,8 @@ installation, not a provider.
 | `auth-magic-link` | sign-in by a link from an email, verified from a handoff token |
 | `cli` | a native `shildik` binary for the management port |
 
-Assembling a distribution is the consumer's `main()`:
+Assembling a distribution is the consumer's `main()` — the recipe is
+[docs/thin-server.md](docs/thin-server.md):
 
 ```kotlin
 val server = shildikServer(
