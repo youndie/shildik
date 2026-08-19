@@ -70,6 +70,69 @@ class RealmResource(
 }
 
 /**
+ * The same surface under addresses of our own.
+ *
+ * [RealmResource] copies Keycloak: `protocol/openid-connect/...` and `certs` are its vocabulary,
+ * kept so services already speaking to one could be pointed here without touching their
+ * configuration. That job is done, and this is the shape a provider would have if it were not
+ * imitating anything: `oauth2/token`, `oauth2/authorize`, `oauth2/jwks`.
+ *
+ * **Both live side by side, and the old one is not going away soon.** A client reads addresses
+ * from the discovery document, so pointing discovery here moves everyone over without them
+ * noticing; anything that hardcoded the old paths keeps working meanwhile.
+ *
+ * **The `/realms/{realm}` prefix stays**, and that is not an oversight. It is part of the issuer,
+ * the issuer is in every token ever issued and in every consumer's configuration, and moving it
+ * is a migration of its own — not a rename. Discovery stays where it is for the same reason: a
+ * client derives its address from the issuer, not from a setting.
+ */
+@Resource("/realms/{realm}/oauth2")
+class OAuth2(
+    val realm: String,
+) {
+    @Resource("token")
+    class Token(
+        val parent: OAuth2,
+    )
+
+    /** `authorize`, not `auth`: the endpoint is named that way in RFC 6749 §3.1. */
+    @Resource("authorize")
+    class Authorize(
+        val parent: OAuth2,
+    )
+
+    /** `jwks`, not `certs`: the document is a JWK Set — [RFC 7517](https://www.rfc-editor.org/rfc/rfc7517). */
+    @Resource("jwks")
+    class Jwks(
+        val parent: OAuth2,
+    )
+
+    @Resource("userinfo")
+    class UserInfo(
+        val parent: OAuth2,
+    )
+
+    @Resource("logout")
+    class Logout(
+        val parent: OAuth2,
+    )
+
+    /** Where an external provider returns the person. */
+    @Resource("callback/{method}")
+    class Callback(
+        val parent: OAuth2,
+        val method: String,
+    )
+
+    /** Where the sign-in form posts a login and a password. */
+    @Resource("login/{method}")
+    class Login(
+        val parent: OAuth2,
+        val method: String,
+    )
+}
+
+/**
  * The token response.
  *
  * Field names are snake_case per [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749). `@SerialName`
