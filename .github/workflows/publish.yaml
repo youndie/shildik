@@ -29,10 +29,10 @@ jobs:
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: konan-${{ runner.os }}-
 
-      # The version is `0.1.0.<run number>`: monotonic, traceable back to a run, and impossible to
-      # produce twice by accident.
+      # The version is `0.2.0.<run number>`: monotonic, traceable back to a run, and impossible to
+      # produce twice by accident. See the root build for why the line starts at 0.2.
       - name: Publish to snapshots
-        run: ./gradlew publishAllPublicationsToReposiliteRepository -PVERSION=0.1.0.${{ github.run_number }}
+        run: ./gradlew publishAllPublicationsToReposiliteRepository -PVERSION=0.2.0.${{ github.run_number }}
         env:
           REPOSILITE_USER: ${{ secrets.REPOSILITE_USER }}
           REPOSILITE_SECRET: ${{ secrets.REPOSILITE_SECRET }}

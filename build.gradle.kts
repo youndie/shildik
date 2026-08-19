@@ -10,7 +10,12 @@ plugins {
 
 allprojects {
     group = "ru.workinprogress.shildik"
-    version = "0.1.0"
+
+    // 0.2.x, not 0.1.x. The same coordinates were published from the private repository up to
+    // 0.1.0.5, and the run numbers here start from one — continuing the old line would mean
+    // handing consumers a lower version of the same artifact from a different repository. The
+    // major line makes the move visible and keeps the ordering monotonic.
+    version = "0.2.0"
 }
 
 /** Java 25 — the same version the services that consume these libraries run on. */
