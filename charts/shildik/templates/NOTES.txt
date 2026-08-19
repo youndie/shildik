@@ -1,0 +1,24 @@
+{{ include "shildik.fullname" . }} is installed.
+
+Issuer:     {{ .Values.issuer }}
+Image:      {{ include "shildik.image" . }}
+Management: port {{ .Values.ports.management }} — in the service, never in the ingress.
+
+While no admin client exists, the management API accepts a bootstrap token. If you did not supply
+one, it is printed on every start:
+
+  kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} | grep bootstrap
+
+Then, from somewhere that can reach the management port:
+
+  kubectl port-forward svc/{{ include "shildik.fullname" . }} {{ .Values.ports.management }}
+  export SHILDIK_URL=http://127.0.0.1:{{ .Values.ports.management }} SHILDIK_TOKEN=<token>
+  shildik tenant create main
+  shildik client create orders-api --role orders:read
+
+{{- if .Values.postgres.enabled }}
+
+⚠ postgres.enabled is on. That database is for trying this out: one replica, no backup, and the
+  data lives on whatever the storage class gave it. Point `database.jdbcUrl` at a database you
+  operate before anyone signs in for real.
+{{- end }}

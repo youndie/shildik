@@ -1,0 +1,36 @@
+# The provider and a database, for trying it out on a laptop.
+#
+# Both ports are published here because there is nobody else on this machine to protect them from.
+# In a cluster the management port stays inside — see charts/shildik.
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: shildik
+      POSTGRES_USER: shildik
+      POSTGRES_PASSWORD: secret
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shildik"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  shildik:
+    image: ghcr.io/youndie/shildik:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Must equal the address a client reaches — it goes into every token as `iss`, and clients
+      # compare it with what discovery says.
+      SHILDIK_ISSUER: http://127.0.0.1:8080
+      SHILDIK_JDBC_URL: jdbc:postgresql://postgres:5432/shildik
+      SHILDIK_DB_USER: shildik
+      SHILDIK_DB_PASSWORD: secret
+      # A real installation takes this from a secret store and rotates it. Here it is a string in
+      # a file, which is exactly why this file is not a deployment.
+      SHILDIK_MASTER_KEYS: change-me
+      SHILDIK_BOOTSTRAP_TOKEN: bootstrap
+    ports:
+      - "8080:8080"
+      - "9000:9000"

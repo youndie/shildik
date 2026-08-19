@@ -1,0 +1,86 @@
+image:
+  repository: ghcr.io/youndie/shildik
+  # Empty means the chart's appVersion. Pin it in a real installation: `latest` and "whatever the
+  # chart shipped with" are both ways of not knowing what is running.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# The address the provider answers on. It goes into every token as `iss` and into discovery, and
+# clients compare the two — so it must equal the address that actually reaches the pod, scheme
+# included. There is no default: a wrong issuer fails at the client, hours later, as "sign-in is
+# broken" rather than as a bad value here.
+issuer: ""
+
+replicaCount: 2
+
+ports:
+  public: 8080
+  # **Never published through the ingress.** The admin API lives here, and the whole access model
+  # is that it does not exist on the public network.
+  management: 9000
+
+ingress:
+  enabled: true
+  className: ""
+  host: ""
+  annotations: {}
+  tls:
+    enabled: false
+    # Empty means the ingress controller's default certificate.
+    secretName: ""
+
+# The provider is stateless; this is where the state is. Point it at a database you operate, or
+# switch on the one below for a trial.
+database:
+  jdbcUrl: ""
+  secret:
+    name: shildik-db
+    userKey: username
+    passwordKey: password
+
+# Secrets come from cluster secrets by name, never from values: values are visible through
+# `helm get values` and end up committed.
+secret:
+  name: shildik-secret
+  # Comma-separated. The first key encrypts, the rest are accepted while a rotation is in flight.
+  masterKeysKey: SHILDIK_MASTER_KEYS
+  # Optional. Without it a random bootstrap token is printed to the log on every start while no
+  # admin client exists.
+  bootstrapTokenKey: ""
+
+# Sign-in methods configure themselves from the environment: a key that is absent means a method
+# that is not offered. What the image cannot do is carry a method it was not built with — see
+# docs/thin-server.md.
+env: []
+# - name: GOOGLE_CLIENT_ID
+#   value: "…"
+# - name: MAGIC_HANDOFF_SECRET
+#   valueFrom:
+#     secretKeyRef: { name: shildik-magic, key: secret }
+
+resources:
+  requests:
+    cpu: 30m
+    memory: 64Mi
+  # Measured at 45–48 MiB resident in production, with a peak at start-up. Four times that is
+  # room, not generosity: an OOMKill here is a sign-in outage.
+  limits:
+    cpu: "1"
+    memory: 256Mi
+
+# A Postgres for trying the chart out. Not for anything else: one replica, no backup, no
+# monitoring, and the data lives in whatever the storage class hands out.
+postgres:
+  enabled: false
+  image: postgres:18-alpine
+  database: shildik
+  storage: 2Gi
+  storageClass: ""
+  auth:
+    # Reuses `database.secret` — one place where the credentials live, whoever runs the database.
+    secretName: shildik-db
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: shildik
+description: An OpenID Connect provider — one native binary and one PostgreSQL
+type: application
+version: 0.1.0
+# The image tag this chart defaults to. Kept in step with `appVersion` rather than with the chart's
+# own version: a chart change and a provider change are different events.
+appVersion: "0.2.0.8"
+home: https://github.com/youndie/shildik
+sources:
+  - https://github.com/youndie/shildik
