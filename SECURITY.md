@@ -6,8 +6,8 @@ privately rather than in a public issue.
 
 ## Reporting
 
-Open a [private security advisory](https://github.com/youndie/shildik-public/security/advisories/new),
-or email **panic.xyb@gmail.com** with `shildik-public` in the subject.
+Open a [private security advisory](https://github.com/youndie/shildik/security/advisories/new),
+or email **panic.xyb@gmail.com** with `shildik` in the subject.
 
 Please include what you can: affected module and version, what an attacker gains, and the
 smallest way to reproduce it. A failing test is worth more than a description.

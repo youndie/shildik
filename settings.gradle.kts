@@ -1,4 +1,4 @@
-rootProject.name = "shildik-public"
+rootProject.name = "shildik"
 
 pluginManagement {
     repositories {
