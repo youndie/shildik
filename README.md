@@ -7,12 +7,55 @@
 [![jvm](https://img.shields.io/badge/JVM-orange?logoColor=white)](https://kotlinlang.org)
 [![licence](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
 
-The parts of [shildik](https://github.com/youndie) — an identity provider written in Kotlin — that
-are useful without shildik itself.
+shildik — an OpenID Connect provider written in Kotlin, multiplatform, running on the JVM and as a
+Kotlin/Native binary — together with the libraries a service needs to live with it.
 
-Six modules so far. They exist because the JVM answer to the same problems does not compile for
-Kotlin/Native, and a service that moves to a native binary should not have to give up token
-verification, service tokens or route-level authorization to get there.
+It exists because the way a sign-in method is added mattered more than the feature list. In Keycloak
+a magic link lives as a jar built against somebody else's SPI, loaded into somebody else's process.
+Here a sign-in method is a module implementing one interface, and a distribution is a `main()` that
+lists the ones it wants: what a build does **not** carry is a fact of the build rather than a
+setting.
+
+What is here: the domain, its storage, the HTTP layer, three sign-in methods, an admin CLI, and the
+client-side libraries. What is not: our own distribution, charts and runbooks — those describe an
+installation, not a provider.
+
+## The provider
+
+| Module | What it is |
+|---|---|
+| `core` | the domain: tenants, clients, users, codes, tokens, signing keys |
+| `server` | the HTTP layer — the OIDC contour, the admin API, the sign-in page |
+| `storage-sqlx4k` | PostgreSQL behind the domain's ports, on the JVM and on native alike |
+| `shared` | the admin API wire: addresses as Ktor resources, models |
+| `auth-password` | sign-in by password: PBKDF2, attempt counting, lock-out |
+| `auth-google` | sign-in through Google |
+| `auth-magic-link` | sign-in by a link from an email, verified from a handoff token |
+| `cli` | a native `shildik` binary for the management port |
+
+Assembling a distribution is the consumer's `main()`:
+
+```kotlin
+val server = shildikServer(
+    config = ShildikConfig(issuer = "https://id.example.com", /* … */),
+    storage = { config -> sqlx4kStorageModule(config.jdbcUrl, config.dbUser, config.dbPassword) },
+)
+server.start(wait = true)
+```
+
+Sign-in methods are handed to the graph the same way — by listing them. A build without
+`auth-password` has no password sign-in, and no configuration can bring it back.
+
+Two ports, always: the public contour serves tokens, JWKS, discovery and the sign-in page; the
+management contour serves `/admin` and is never exposed. They are two Ktor engines rather than one
+with a check on each route, so a request to `/admin` from outside gets a 404 — the existence of a
+management contour is not confirmed.
+
+## The libraries
+
+They are useful without the provider, and predate it here: the JVM answer to the same problems does
+not compile for Kotlin/Native, and a service that moves to a native binary should not have to give
+up token verification, service tokens or route-level authorization to get there.
 
 ## `crypto` — JOSE without a JOSE library
 
@@ -106,8 +149,9 @@ which of them a given provider serves is its business, and the libraries no long
 
 ## Targets
 
-`jvm`, `linuxX64`, `linuxArm64` and `macosArm64` for everything except `ktor-role-based-auth`,
-which is JVM, because Ktor's authentication plugin is.
+`jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with two exceptions: `ktor-role-based-auth` is
+JVM, because Ktor's authentication plugin is; `storage-sqlx4k` is JVM and `linuxX64`, which is what
+the driver publishes.
 
 ## Add it
 
@@ -117,6 +161,12 @@ repositories {
 }
 
 dependencies {
+    // The provider
+    implementation("ru.workinprogress.shildik:server:$version")
+    implementation("ru.workinprogress.shildik:storage-sqlx4k:$version")
+    implementation("ru.workinprogress.shildik:auth-password:$version")
+
+    // The libraries a consuming service needs
     implementation("ru.workinprogress.shildik:crypto:$version")
     implementation("ru.workinprogress.shildik:ktor-role-based-auth:$version")
     implementation("ru.workinprogress.shildik:oidc-auth-client:$version")
@@ -132,6 +182,11 @@ dependencies {
 
 ## Status
 
-Early. These modules run in production inside a private identity provider, but their API here is
-new and may still move. The provider itself is not open source — what is published is what stands
-on its own.
+Early in the open, not early in life. This code runs in production: it replaced Keycloak for a
+platform whose owners sign in through it every day, and it has been through a migration of users, a
+move to Kotlin/Native and a PostgreSQL major upgrade. What is new is the packaging — the module
+boundaries and the published API may still move.
+
+The documentation lives in the repository this came from and is being translated; until it lands
+here, the code carries its own reasons in comments, which is where the decisions are recorded
+anyway.
