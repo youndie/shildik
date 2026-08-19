@@ -1,0 +1,80 @@
+{{- if .Values.postgres.enabled }}
+# A database for trying the chart out, and it says so in its own name. One replica, no backup, no
+# monitoring: everything that makes a database survivable is missing on purpose, because a chart
+# that quietly runs your production database is worse than one that does not offer to.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "shildik.fullname" . }}-postgres-trial
+  labels: {{- include "shildik.labels" . | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.postgres.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storage }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "shildik.fullname" . }}-postgres-trial
+  labels: {{- include "shildik.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "shildik.fullname" . }}-postgres-trial
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "shildik.name" . }}-postgres-trial
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "shildik.name" . }}-postgres-trial
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image | quote }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.auth.secretName }}
+                  key: {{ .Values.database.secret.userKey }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.auth.secretName }}
+                  key: {{ .Values.database.secret.passwordKey }}
+            # The data directory is a subdirectory of the mount rather than the mount itself:
+            # `lost+found` on a fresh volume makes Postgres refuse to initialise.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "shildik.fullname" . }}-postgres-trial
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "shildik.fullname" . }}-postgres-trial
+  labels: {{- include "shildik.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "shildik.name" . }}-postgres-trial
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - port: 5432
+      targetPort: postgres
+{{- end }}

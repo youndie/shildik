@@ -1,0 +1,51 @@
+name: Chart
+
+# Manual, like the image: a chart version is a decision, and `helm push` overwrites nothing —
+# a version pushed twice is a version somebody has to reason about.
+on:
+  workflow_dispatch:
+    inputs:
+      appVersion:
+        description: 'image tag the chart defaults to, e.g. 0.2.0.8 — empty keeps Chart.yaml'
+        type: string
+        required: false
+
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+
+      - name: Set appVersion
+        if: inputs.appVersion != ''
+        env:
+          APP_VERSION: ${{ inputs.appVersion }}
+        run: |
+          sed -i "s|^appVersion: .*|appVersion: \"$APP_VERSION\"|" charts/shildik/Chart.yaml
+          grep '^appVersion:' charts/shildik/Chart.yaml
+
+      - name: Package
+        run: helm package charts/shildik --destination dist
+
+      - name: Log in to ghcr
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # `oci://ghcr.io/<owner>/charts` — the chart's own name is appended by helm, so the result is
+      # `ghcr.io/<owner>/charts/shildik`.
+      - name: Push
+        run: helm push dist/shildik-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Summary
+        run: |
+          {
+            echo '### pushed'
+            echo
+            echo '```bash'
+            echo "helm install idp oci://ghcr.io/${{ github.repository_owner }}/charts/shildik"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

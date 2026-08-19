@@ -36,3 +36,26 @@ jobs:
       # targets is not possible here. What this proves is that the common code works away from the
       # JVM — which is the whole point of these modules.
       - run: ./gradlew check -x macosArm64Test
+
+  # The chart is not built by Gradle, so nothing else would ever look at it. A template that stops
+  # rendering is found by whoever installs it otherwise — which is the worst possible reviewer.
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/setup-helm@v5
+
+      - run: helm lint charts/shildik --set issuer=https://id.example.com --set database.jdbcUrl=jdbc:postgresql://pg:5432/shildik --set ingress.host=id.example.com
+
+      # Rendered with the trial database on, because that half is otherwise never exercised.
+      - run: helm template idp charts/shildik --set issuer=https://id.example.com --set database.jdbcUrl=jdbc:postgresql://pg:5432/shildik --set ingress.host=id.example.com --set postgres.enabled=true > /dev/null
+
+      # The guards are part of the contract: a chart that installs without an issuer produces a
+      # provider whose tokens no client accepts, and the failure surfaces hours later.
+      - name: Required values are required
+        run: |
+          if helm template idp charts/shildik > /dev/null 2>&1; then
+            echo "chart rendered without issuer or jdbcUrl — the guards are gone" >&2
+            exit 1
+          fi

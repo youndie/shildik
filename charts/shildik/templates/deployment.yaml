@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shildik.fullname" . }}
+  labels: {{- include "shildik.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "shildik.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "shildik.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: shildik
+          image: {{ include "shildik.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: public
+              containerPort: {{ .Values.ports.public }}
+            - name: management
+              containerPort: {{ .Values.ports.management }}
+          env:
+            - name: SHILDIK_ISSUER
+              value: {{ required "issuer is required: it goes into every token and clients compare it with discovery" .Values.issuer | quote }}
+            - name: SHILDIK_PORT
+              value: {{ .Values.ports.public | quote }}
+            - name: SHILDIK_MANAGEMENT_PORT
+              value: {{ .Values.ports.management | quote }}
+            - name: SHILDIK_JDBC_URL
+              value: {{ required "database.jdbcUrl is required" .Values.database.jdbcUrl | quote }}
+            - name: SHILDIK_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.secret.name }}
+                  key: {{ .Values.database.secret.userKey }}
+            - name: SHILDIK_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.secret.name }}
+                  key: {{ .Values.database.secret.passwordKey }}
+            - name: SHILDIK_MASTER_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: {{ .Values.secret.masterKeysKey }}
+            {{- if .Values.secret.bootstrapTokenKey }}
+            - name: SHILDIK_BOOTSTRAP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: {{ .Values.secret.bootstrapTokenKey }}
+            {{- end }}
+            - name: SHILDIK_RELEASE
+              value: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          # Two probes answering two questions. Liveness deliberately does not touch the database:
+          # hang it on there and one unreachable database restarts every pod at once, turning an
+          # outage into a restart loop. Readiness does touch it — without a database the provider
+          # hands out neither tokens nor keys, and has no business in the endpoints.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: management
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: management
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 2
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}

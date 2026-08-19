@@ -154,6 +154,38 @@ which of them a given provider serves is its business, and the libraries no long
 JVM, because Ktor's authentication plugin is; `storage-sqlx4k` is JVM and `linuxX64`, which is what
 the driver publishes.
 
+## Run one
+
+```bash
+docker compose -f docker/compose.yaml up -d
+
+curl -X POST localhost:9000/admin/tenants \
+  -H 'Authorization: Bearer bootstrap' -H 'Content-Type: application/json' \
+  -d '{"realm":"main"}'
+
+curl -X POST localhost:9000/admin/tenants/main/clients \
+  -H 'Authorization: Bearer bootstrap' -H 'Content-Type: application/json' \
+  -d '{"clientId":"orders-api","roles":["orders:read"]}'
+# → { "clientId": "orders-api", "secret": "…" }   ← the only time the secret is shown
+
+curl -X POST localhost:8080/realms/main/protocol/openid-connect/token \
+  -d grant_type=client_credentials -d client_id=orders-api -d client_secret=<secret>
+```
+
+The image is `ghcr.io/youndie/shildik` — 44 MB, `linux/amd64`, the reference distribution with
+every sign-in method compiled in. In a cluster there is a chart:
+
+```bash
+helm install idp oci://ghcr.io/youndie/charts/shildik \
+  --set issuer=https://id.example.com \
+  --set ingress.host=id.example.com \
+  --set database.jdbcUrl=jdbc:postgresql://postgres:5432/shildik
+```
+
+**Both of those run the reference build, which carries every method it has.** For anything real,
+a build of your own is two files and the dependency list is the feature set —
+[docs/thin-server.md](docs/thin-server.md).
+
 ## Add it
 
 ```kotlin
