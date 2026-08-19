@@ -36,7 +36,13 @@ class ProvideClientTest {
     private fun tokenClient(): HttpClient {
         var issued = 0
         val engine =
-            MockEngine {
+            MockEngine { request ->
+                // Провайдер без discovery: этот тест про подстановку токена, а не про то, откуда
+                // берётся адрес. Не ответить здесь 404 значит посчитать чтение discovery за
+                // выдачу токена — и сбить нумерацию, по которой тест и различает токены.
+                if ("openid-configuration" in request.url.toString()) {
+                    return@MockEngine respondError(HttpStatusCode.NotFound)
+                }
                 issued++
                 respond(
                     """{"access_token":"token-$issued","refresh_token":"refresh-$issued","expires_in":300,"token_type":"Bearer"}""",

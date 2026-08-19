@@ -35,7 +35,18 @@ internal class Provider(
     /** How many times the provider was asked for JWKS — the number that shows whether the cache works. */
     var calls: Int = 0
 
+    /** How many times its discovery document was read. */
+    var discoveryCalls: Int = 0
+
     val certs: String get() = certsUrl(url, realm)
+
+    val discovery: String get() = discoveryUrl(url, realm)
+
+    /**
+     * Куда `jwks_uri` в discovery показывает. `null` — провайдер без discovery: так выглядит и
+     * тот, кто старше этого поля, и тот, кто в эту секунду недоступен.
+     */
+    var jwksUri: String? = null
 
     private suspend fun key(): SigningKey = key ?: SigningKey.generate(kid).also { key = it }
 
@@ -85,10 +96,25 @@ internal class Provider(
     suspend fun signingKey(): SigningKey = key()
 }
 
-/** An engine serving the JWKS of the listed providers and 404 for everything else. */
+/** An engine serving the JWKS — and, when asked for, the discovery — of the listed providers. */
 internal fun jwksEngine(vararg providers: Provider) =
     MockEngine { request ->
-        val provider = providers.firstOrNull { it.certs == request.url.toString() }
+        val address = request.url.toString()
+
+        providers.firstOrNull { it.discovery == address }?.let { provider ->
+            val uri = provider.jwksUri
+            return@MockEngine if (uri == null) {
+                respondError(HttpStatusCode.NotFound)
+            } else {
+                provider.discoveryCalls++
+                respond(
+                    """{"issuer":"${provider.url}/realms/${provider.realm}","jwks_uri":"$uri"}""",
+                    headers = headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+            }
+        }
+
+        val provider = providers.firstOrNull { it.certs == address || it.jwksUri == address }
 
         when {
             provider == null -> respondError(HttpStatusCode.NotFound)

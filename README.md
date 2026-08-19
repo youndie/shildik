@@ -94,9 +94,15 @@ refresh and one retry.
 | `oidc-auth-client` | a service token via `client_credentials`, plus `provideClient` |
 | `oidc-auth-server` | the token validator for a Ktor service |
 
-The address shape follows Keycloak (`/realms/{realm}/protocol/openid-connect/…`). That is
-deliberate rather than accidental: it let services and libraries already speaking to one provider
-be pointed at another without touching their configuration.
+**Addresses are asked of the provider, not assumed.** The client reads `token_endpoint` and the
+validator reads `jwks_uri` from the discovery document, remembering the answer. A provider with no
+discovery falls back to the Keycloak-shaped path (`/realms/{realm}/protocol/openid-connect/…`) —
+something without discovery is older, not newer.
+
+That shape is also what `RealmResource` describes, and it is deliberate rather than accidental: it
+let services and libraries already speaking to one provider be pointed at another without touching
+their configuration. `OAuth2` describes the same surface under addresses without the inheritance;
+which of them a given provider serves is its business, and the libraries no longer need to know.
 
 ## Targets
 

@@ -97,7 +97,12 @@ fun Application.configureAuth(
     }
 }
 
-/** The JWKS address comes from `shared-oidc`, as the same type the provider's router declares. */
+/**
+ * The inherited JWKS address, kept as the fallback when a provider has no discovery document.
+ *
+ * It is built from `shared-oidc` by the same type the provider's router declares, so the two
+ * cannot drift apart. Where the address comes from in the normal case is [EndpointAddresses].
+ */
 internal fun certsUrl(
     base: String,
     realm: String,
@@ -112,10 +117,12 @@ internal fun OidcConfig.keys(
     client: HttpClient,
     log: (String) -> Unit,
 ): KeySource {
-    val primary = JwksSource(client, certsUrl(url, realm))
+    val primary = JwksSource(client, EndpointAddresses(client, url, realm)::jwksUrl)
     if (additionalUrl.isBlank()) return primary
 
     val additional = additionalRealm.ifBlank { realm }
     log("Tokens from two providers will be accepted: $url and $additionalUrl (realm $additional)")
-    return MultiSourceKeys(listOf(primary, JwksSource(client, certsUrl(additionalUrl, additional))))
+    return MultiSourceKeys(
+        listOf(primary, JwksSource(client, EndpointAddresses(client, additionalUrl, additional)::jwksUrl)),
+    )
 }

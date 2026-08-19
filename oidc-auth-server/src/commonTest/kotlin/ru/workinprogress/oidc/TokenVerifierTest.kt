@@ -23,7 +23,7 @@ class TokenVerifierTest {
 
     private fun verifier(vararg providers: Provider): TokenVerifier {
         val client = HttpClient(jwksEngine(*providers))
-        return TokenVerifier(JwksSource(client, providers.first().certs))
+        return TokenVerifier(JwksSource(client, jwksUrl = { providers.first().certs }))
     }
 
     @Test
@@ -49,7 +49,7 @@ class TokenVerifierTest {
             // The verifier's clock is moved rather than the token: that is how it looks in production.
             val late =
                 TokenVerifier(
-                    JwksSource(HttpClient(jwksEngine(provider)), provider.certs),
+                    JwksSource(HttpClient(jwksEngine(provider)), jwksUrl = { provider.certs }),
                     now = { Clock.System.now() + 2.hours },
                 )
 

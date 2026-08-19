@@ -31,7 +31,10 @@ internal interface KeySource {
  */
 internal class JwksSource(
     private val client: HttpClient,
-    private val certsUrl: String,
+    // A function rather than a string: the address is asked of the provider (see
+    // `EndpointAddresses`), and asking has to happen at use, not at construction — a service
+    // starts before its provider is necessarily up.
+    private val jwksUrl: suspend () -> String,
     private val ttl: Duration = 24.hours,
     private val minRefetch: Duration = 10.seconds,
     private val now: () -> Instant = { Clock.System.now() },
@@ -75,7 +78,7 @@ internal class JwksSource(
      * are already in the cache, so the cost of that retry is only paid for unknown `kid`s.
      */
     private suspend fun load() {
-        val body = runCatching { client.get(certsUrl).bodyAsText() }.getOrNull() ?: return
+        val body = runCatching { client.get(jwksUrl()).bodyAsText() }.getOrNull() ?: return
         val loaded = VerificationKey.fromJwks(body)
         if (loaded.isEmpty()) return
 

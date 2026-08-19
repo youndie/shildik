@@ -10,6 +10,8 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType.Application.Json
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Parameters
@@ -20,11 +22,13 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import ru.workinprogress.shildik.shared.RealmResource
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Clock
+import kotlinx.serialization.json.Json as KotlinJson
 
 private fun now(): Long = Clock.System.now().toEpochMilliseconds()
 
@@ -47,9 +51,14 @@ class OidcAuthService(
     // `NoTransformationFoundException`.
     private val httpClient: HttpClient = providerHttpClient(),
 ) {
-    // The address is not assembled from strings: it is described in `:shared-oidc` by the same
-    // type the provider's router declares it with. They can no longer drift apart.
-    private val tokenUrl: String = config.url.trimEnd('/') + href(ResourcesFormat(), config.tokenResource())
+    // The address is **asked of the provider** rather than assembled: `token_endpoint` in the
+    // discovery document is the field that exists for exactly this. Composing a path was fine
+    // while every provider had the same shape; it stops being fine as soon as one of them moves,
+    // and a library that hardcodes a shape decides for the operator which providers they may use.
+    //
+    // The composed path stays as a fallback for a provider with no discovery — and the fallback
+    // is the Keycloak-shaped one, because something without discovery is older, not newer.
+    private val endpoint = TokenEndpoint(httpClient, config)
 
     private val currentToken = AtomicReference<AuthToken?>(null)
     private val tokenRefreshMutex = Mutex()
@@ -75,7 +84,7 @@ class OidcAuthService(
             val tokenResponse =
                 httpClient
                     .submitForm(
-                        tokenUrl,
+                        endpoint.url(),
                         formParameters =
                             Parameters.build {
                                 append("grant_type", "client_credentials")
@@ -98,6 +107,48 @@ class OidcAuthService(
 }
 
 private fun OidcConfig.tokenResource() = RealmResource.OpenIdConnect.Token(RealmResource.OpenIdConnect(RealmResource(realm)))
+
+private fun OidcConfig.discoveryResource() = RealmResource.Discovery(RealmResource(realm))
+
+/**
+ * Where the provider takes token requests — read from discovery once and remembered.
+ *
+ * **A failed read is not remembered.** Only an answer is: a provider that happened to be down
+ * when the service started would otherwise be treated as "has no discovery" for the lifetime of
+ * the process, and the fallback would quietly become permanent.
+ */
+private class TokenEndpoint(
+    private val client: HttpClient,
+    private val config: OidcConfig,
+) {
+    private val mutex = Mutex()
+    private var discovered: String? = null
+
+    private val composed: String
+        get() = config.url.trimEnd('/') + href(ResourcesFormat(), config.tokenResource())
+
+    suspend fun url(): String {
+        discovered?.let { return it }
+
+        return mutex.withLock {
+            discovered?.let { return@withLock it }
+
+            val fromDiscovery =
+                runCatching {
+                    val body =
+                        client
+                            .get(config.url.trimEnd('/') + href(ResourcesFormat(), config.discoveryResource()))
+                            .bodyAsText()
+                    (KotlinJson.parseToJsonElement(body) as JsonObject)["token_endpoint"]
+                        ?.let { it as? JsonPrimitive }
+                        ?.content
+                        ?.takeIf { it.isNotBlank() }
+                }.getOrNull()
+
+            fromDiscovery?.also { discovered = it } ?: composed
+        }
+    }
+}
 
 /**
  * The default client. The engine is deliberately left unset: the application picks it — CIO on the
@@ -122,7 +173,7 @@ private fun providerHttpClient() =
 
         install(ContentNegotiation) {
             json(
-                Json {
+                KotlinJson {
                     prettyPrint = true
                     ignoreUnknownKeys = true
                     isLenient = true

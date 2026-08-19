@@ -16,7 +16,7 @@ class JwksSourceTest {
     private val provider = Provider("provider-key", "https://provider.test")
 
     private fun source(now: () -> kotlin.time.Instant = { Clock.System.now() }) =
-        JwksSource(HttpClient(jwksEngine(provider)), provider.certs, now = now)
+        JwksSource(HttpClient(jwksEngine(provider)), jwksUrl = { provider.certs }, now = now)
 
     @Test
     fun `keys are fetched once for all requests`() =
