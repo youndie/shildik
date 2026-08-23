@@ -30,6 +30,7 @@ class Export : ApiCommand("export") {
                                     public = it.public,
                                     redirectUris = it.redirectUris,
                                     audiences = it.audiences,
+                                    scopes = it.scopes,
                                 )
                             },
                     )
@@ -62,6 +63,7 @@ sealed interface Change {
         val public: Boolean = false,
         val redirectUris: List<String> = emptyList(),
         val audiences: List<String> = emptyList(),
+        val scopes: List<String> = emptyList(),
     ) : Change {
         override val summary get() =
             if (public) {
@@ -78,6 +80,15 @@ sealed interface Change {
         val to: List<String>,
     ) : Change {
         override val summary get() = "~ audiences $clientId: [${from.joinToString(" ")}] → [${to.joinToString(" ")}]"
+    }
+
+    data class UpdateScopes(
+        val realm: String,
+        val clientId: String,
+        val from: List<String>,
+        val to: List<String>,
+    ) : Change {
+        override val summary get() = "~ scopes $clientId: [${from.joinToString(" ")}] → [${to.joinToString(" ")}]"
     }
 
     data class UpdateRoles(
@@ -131,6 +142,7 @@ suspend fun planChanges(
                         it.public,
                         it.redirectUris,
                         it.audiences,
+                        it.scopes,
                     )
             }
             continue
@@ -150,6 +162,7 @@ suspend fun planChanges(
                         client.public,
                         client.redirectUris,
                         client.audiences,
+                        client.scopes,
                     )
                 continue
             }
@@ -166,6 +179,15 @@ suspend fun planChanges(
                         client.clientId,
                         current.audiences.sorted(),
                         client.audiences.sorted(),
+                    )
+            }
+            if (current.scopes.toSet() != client.scopes.toSet()) {
+                changes +=
+                    Change.UpdateScopes(
+                        tenant.realm,
+                        client.clientId,
+                        current.scopes.sorted(),
+                        client.scopes.sorted(),
                     )
             }
         }
@@ -252,6 +274,7 @@ class Apply : ApiCommand("apply") {
                                 client.public,
                                 client.redirectUris,
                                 client.audiences,
+                                client.scopes,
                             )
                         out.message("Client created: ${client.clientId}")
                         // A public client has no secret — printing "secret: null" would be
@@ -271,6 +294,10 @@ class Apply : ApiCommand("apply") {
                     if (current.audiences.toSet() != client.audiences.toSet()) {
                         api.setAudiences(tenant.realm, client.clientId, client.audiences)
                         out.message("Audiences updated: ${client.clientId}")
+                    }
+                    if (current.scopes.toSet() != client.scopes.toSet()) {
+                        api.setScopes(tenant.realm, client.clientId, client.scopes)
+                        out.message("Scopes updated: ${client.clientId}")
                     }
                 }
             }

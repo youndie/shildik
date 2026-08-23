@@ -57,6 +57,7 @@ The shape is dictated by validators that already existed:
 | `realm_access.roles` | an array of strings | everyone: the second level |
 | `email` | user tokens only; absent from service tokens | services that tell a person from a program |
 | `aud` | the resources this token is addressed to; **absent** when the client has none | a resource server deciding whether the token was meant for it |
+| `scope` | space-delimited, what the token permits; **absent** when the client holds nothing | a resource server deciding whether the bearer may do what it asked |
 | `exp`, `iat`, `jti` | standard | — |
 
 ### `resource` — what a token is addressed to
@@ -83,6 +84,37 @@ not used: it is the form readers most often get wrong, and there is nothing to g
 which ones.
 
 Which resources a client may name is part of the client ([feature-client-admin](../features/feature-client-admin.md)).
+
+### `scope` — what a token permits
+
+`aud` says which service will take a token; `scope` says what may be done there, and a resource
+server needs both. Everything built on OAuth asks the second question of `scope`: an MCP server
+answers a token without the scope it wants with `403` and
+`WWW-Authenticate: Bearer …, scope="tasks:read"`, however right the audience. Our
+`realm_access.roles` does not answer it — roles are ours, read by our own services, and a third
+party has no reason to know the word.
+
+The rule is deliberately the one above, word for word:
+
+* a client may only ask for a scope it was **granted**; one it was not is refused with
+  `invalid_scope` ([RFC 6749 §5.2](https://www.rfc-editor.org/rfc/rfc6749#section-5.2)) rather than
+  `invalid_client`, for the same reason;
+* asking for **nothing** yields everything the client holds;
+* a client holding nothing gets a token with no `scope` claim — which is what keeps every client
+  configured before this existed working unchanged.
+
+**Protocol scopes are not permissions.** `openid`, `profile`, `email` and `offline_access` say which
+tokens and which claims to produce; they are instructions to us, not authority over somebody else's
+service. They need no grant — every browser client has been sending them since before clients had a
+scope list, and requiring one would have refused every sign-in the day this shipped — and they stay
+out of the claim, which describes what the bearer may do. `scopes_supported` in discovery lists
+exactly those four for the same reason: what a given client may hold belongs to that client, and
+advertising a global list would be a promise made on somebody else's behalf.
+
+In the browser flow the scope is decided where the person agreed to it — at the authorization
+request — and a scope the client was never granted is refused **there**, not after somebody has
+typed their password. A refresh re-resolves it against the client's current list: a permission taken
+away has to stop appearing without waiting for the session to end.
 
 The nesting of `realm_access.roles` is not a whim but what an existing validator parses out of
 `payload.getClaim("realm_access").asMap()["roles"]`.

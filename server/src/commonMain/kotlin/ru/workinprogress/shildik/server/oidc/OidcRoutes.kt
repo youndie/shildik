@@ -40,6 +40,7 @@ import ru.workinprogress.shildik.core.feature.keys.GetJwksUseCase
 import ru.workinprogress.shildik.core.feature.keys.UnknownRealm
 import ru.workinprogress.shildik.core.feature.token.IssueServiceTokenUseCase
 import ru.workinprogress.shildik.core.feature.token.IssueUserTokensUseCase
+import ru.workinprogress.shildik.core.feature.token.Scopes
 import ru.workinprogress.shildik.core.feature.token.VerifyOwnTokenUseCase
 import ru.workinprogress.shildik.core.port.TenantRepository
 import ru.workinprogress.shildik.server.ErrorReporter
@@ -127,9 +128,12 @@ fun Application.oidcRoutes(koin: Koin) {
                 // RFC 8707 allows the parameter more than once, and a client that names two
                 // resources means both — not the last one to arrive.
                 resources = form.getAll("resource").orEmpty().toSet(),
+                // One parameter, space-delimited (RFC 6749 §3.3) — unlike `resource` above, which
+                // repeats. The two spellings are not ours to reconcile.
+                scopes = Scopes.parse(form["scope"]),
             ),
         ).fold(
-            onSuccess = { call.respond(TokenResponse(it.accessToken, it.expiresInSeconds)) },
+            onSuccess = { call.respond(TokenResponse(it.accessToken, it.expiresInSeconds, scope = it.scope)) },
             // A refusal to the client and a fault of ours answer **differently**. This used to
             // be one `invalid_client` for everything: an unreachable database looked to the client
             // like a bad secret, and nothing at all reached monitoring. The `client_credentials`
@@ -417,6 +421,11 @@ fun Application.oidcRoutes(koin: Koin) {
                     userInfoEndpoint = "$issuer/oauth2/userinfo",
                     endSessionEndpoint = "$issuer/oauth2/logout",
                     jwksUri = "$issuer/oauth2/jwks",
+                    // From the one place that decides which scopes need no grant. A second copy of
+                    // this list would be right until somebody added a fifth name to one of them.
+                    // The scopes a client may actually hold are not advertised: they belong to a
+                    // client, and a global list would be a promise made on somebody else's behalf.
+                    scopesSupported = Scopes.PROTOCOL.sorted(),
                 ),
             )
         }
@@ -464,6 +473,7 @@ private suspend fun io.ktor.server.routing.RoutingContext.exchangeCode(
                     nonce = exchanged.nonce,
                     scope = exchanged.scope,
                     audience = exchanged.audience,
+                    permissions = exchanged.permissions,
                 )
             call.respond(
                 TokenResponse(
@@ -514,6 +524,7 @@ private suspend fun io.ktor.server.routing.RoutingContext.refreshSession(
                     nonce = null,
                     scope = refreshed.scope,
                     audience = refreshed.audience,
+                    permissions = refreshed.permissions,
                 )
             call.respond(
                 TokenResponse(

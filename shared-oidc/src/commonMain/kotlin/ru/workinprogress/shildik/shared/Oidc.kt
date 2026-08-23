@@ -179,6 +179,12 @@ data class DiscoveryDocument(
      * whatever is written here, and `plain` protects nothing at all.
      */
     @SerialName("code_challenge_methods_supported") val codeChallengeMethodsSupported: List<String> = listOf("S256"),
+    /**
+     * The default is a fallback, not the authority: the server passes what
+     * `core`'s `Scopes.PROTOCOL` says, and that is the list to change. This module cannot read it —
+     * `:core` depends on nothing here and adding the dependency for one constant would be worse
+     * than a default that is kept in step.
+     */
     @SerialName("scopes_supported")
     val scopesSupported: List<String> = listOf("openid", "profile", "email", "offline_access"),
     @SerialName("subject_types_supported") val subjectTypesSupported: List<String> = listOf("public"),

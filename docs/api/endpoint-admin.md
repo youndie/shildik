@@ -40,6 +40,7 @@ start, so that a pod restart does not leave anybody locked out.
 | `DELETE` | `/admin/tenants/{tenant}/clients/{id}` | delete a client |
 | `PUT` | `/admin/tenants/{tenant}/clients/{id}/roles` | replace a client's set of roles |
 | `PUT` | `/admin/tenants/{tenant}/clients/{id}/audiences` | replace which resources its tokens may be addressed to |
+| `PUT` | `/admin/tenants/{tenant}/clients/{id}/scopes` | replace what its tokens may permit there |
 | `GET` | `/admin/tenants/{tenant}/users` | list users |
 | `POST` | `/admin/tenants/{tenant}/users` | import a user, keeping their identifier |
 | `PUT` | `/admin/tenants/{tenant}/users/{id}/password` | set a password |
