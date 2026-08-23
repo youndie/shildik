@@ -12,6 +12,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.header
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.resources.get
+import io.ktor.server.resources.options
 import io.ktor.server.resources.post
 import io.ktor.server.response.cacheControl
 import io.ktor.server.response.header
@@ -95,6 +96,7 @@ fun Application.oidcRoutes(koin: Koin) {
     }
 
     suspend fun io.ktor.server.routing.RoutingContext.issueTokens(realm: String) {
+        call.readableByAPage()
         val form = call.receiveParameters()
         val credentials = clientCredentials(call, form)
 
@@ -294,6 +296,8 @@ fun Application.oidcRoutes(koin: Koin) {
     }
 
     suspend fun io.ktor.server.routing.RoutingContext.serveJwks(realm: String) {
+        call.readableByAPage()
+
         // Deliberately shorter than the client's day-long cache: the window is set by the
         // client anyway (protocol §3).
         call.response.cacheControl(CacheControl.MaxAge(maxAgeSeconds = JWKS_CACHE_SECONDS))
@@ -338,6 +342,9 @@ fun Application.oidcRoutes(koin: Koin) {
         post<RealmResource.OpenIdConnect.Token> { issueTokens(it.parent.parent.realm) }
         post<OAuth2.Token> { issueTokens(it.parent.realm) }
 
+        options<RealmResource.OpenIdConnect.Token> { call.answerPreflight() }
+        options<OAuth2.Token> { call.answerPreflight() }
+
         /**
          * The start of a browser sign-in.
          *
@@ -365,6 +372,9 @@ fun Application.oidcRoutes(koin: Koin) {
         get<RealmResource.OpenIdConnect.Certs> { serveJwks(it.parent.parent.realm) }
         get<OAuth2.Jwks> { serveJwks(it.parent.realm) }
 
+        options<RealmResource.OpenIdConnect.Certs> { call.answerPreflight() }
+        options<OAuth2.Jwks> { call.answerPreflight() }
+
         get<RealmResource.OpenIdConnect.UserInfo> { serveUserInfo(it.parent.parent.realm) }
         get<OAuth2.UserInfo> { serveUserInfo(it.parent.realm) }
 
@@ -375,6 +385,7 @@ fun Application.oidcRoutes(koin: Koin) {
         post<OAuth2.Logout> { logout(it.parent.realm, call.receiveParameters()) }
 
         get<RealmResource.Discovery> { resource ->
+            call.readableByAPage()
             val issuer = issuers.issuerFor(resource.parent.realm)
 
             call.respond(
@@ -392,6 +403,8 @@ fun Application.oidcRoutes(koin: Koin) {
                 ),
             )
         }
+
+        options<RealmResource.Discovery> { call.answerPreflight() }
     }
 }
 

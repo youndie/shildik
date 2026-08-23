@@ -100,6 +100,34 @@ Two decisions follow:
 A refresh token is issued **only when `offline_access` was asked for**: a long-lived secret for
 somebody who did not ask is risk without benefit.
 
+## 4a. A client that runs the flow in the page
+
+Everything above assumes the browser half is driven by a server — next-auth reads discovery and
+exchanges the code inside a Next.js application, and the browser only ever follows redirects. A
+single-page client does those fetches itself, from the page, and a browser hands a fetched response
+to the page only if the response says which origins may read it.
+
+Three endpoints are therefore marked readable by any origin:
+
+| | |
+|---|---|
+| `{issuer}/.well-known/openid-configuration` | the client reads it before it knows anything else |
+| `{issuer}/oauth2/jwks` | keys, for a client that verifies tokens itself |
+| `{issuer}/oauth2/token` | where the code is exchanged |
+
+`OPTIONS` on each answers `204` with the same headers. A form-encoded token request is sent without
+a preflight, so the current client never asks — but a preflight answered with `404` fails as "no
+such endpoint", which is a wrong answer to a question that was asked correctly.
+
+**Credentials are not allowed, and that is the line that matters.** These three answers are a public
+document, a public key set, and a token issued to whoever presented a valid code with a matching
+verifier — none of it granted on the strength of the browser's ambient state. No cookie is sent and
+none is honoured, so nothing reachable only by an already-signed-in person is reachable here.
+
+The authorization endpoint and the sign-in form are **not** marked: they are reached by navigating,
+which needs nothing from us. A rule broad enough to cover them would be right about most addresses
+and wrong about one.
+
 ## 5. Acceptance
 
 The main scenario is the same in spirit as for the service contour: it exercises **somebody else's

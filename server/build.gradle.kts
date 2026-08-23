@@ -14,6 +14,7 @@ kotlin {
     sourceSets {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(ktorLibs.server.testHost)
         }
         commonMain.dependencies {
             api(project(":core"))
