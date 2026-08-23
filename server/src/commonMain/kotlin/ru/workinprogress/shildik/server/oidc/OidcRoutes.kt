@@ -32,7 +32,6 @@ import ru.workinprogress.shildik.core.feature.browser.CompleteAuthorizationUseCa
 import ru.workinprogress.shildik.core.feature.browser.EndSessionUseCase
 import ru.workinprogress.shildik.core.feature.browser.ExchangeCodeUseCase
 import ru.workinprogress.shildik.core.feature.browser.LoginOutcome
-import ru.workinprogress.shildik.core.feature.browser.OAuthRejection
 import ru.workinprogress.shildik.core.feature.browser.RefreshTokensUseCase
 import ru.workinprogress.shildik.core.feature.browser.StartAuthorizationUseCase
 import ru.workinprogress.shildik.core.feature.browser.SubmitLoginUseCase
@@ -178,9 +177,11 @@ fun Application.oidcRoutes(koin: Koin) {
                         call.respondLoginPage(loginPath(realm, methodId), started.state)
                     }
                 },
-                onFailure = { error ->
-                    call.respond(HttpStatusCode.BadRequest, OAuthError((error as? OAuthRejection)?.error ?: "server_error"))
-                },
+                // The same classification as everywhere else, rather than a second one written by
+                // hand here. This branch knew only `OAuthRejection`, so every other refusal — an
+                // unknown realm, a scope the client was not granted — came out as `server_error`
+                // with status 400: our fault, said to the client, and reported to nobody.
+                onFailure = { error -> call.respondFailure(error, reporter) },
             )
             return
         }
@@ -205,10 +206,7 @@ fun Application.oidcRoutes(koin: Koin) {
                 val state = issued.state?.let { "&state=" + it.encodeURLParameter() }.orEmpty()
                 call.respondRedirect("${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + state)
             },
-            onFailure = { error ->
-                val code = (error as? OAuthRejection)?.error ?: "server_error"
-                call.respond(HttpStatusCode.BadRequest, OAuthError(code))
-            },
+            onFailure = { error -> call.respondFailure(error, reporter) },
         )
     }
 
