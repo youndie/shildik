@@ -36,9 +36,14 @@ configuration has to travel to git and be applied back with one command.
   carry no `aud` at all, which is how every client behaved before the field existed; a resource
   server that checks the audience refuses such a token. It has its own address rather than being a
   field of a general update: changing it changes which services will accept this client's tokens.
-* `apply` is idempotent: a second run with the same file changes nothing. It compares roles and
-  audiences **separately** — a client whose both drifted used to have the second left as it was,
-  with `apply` reporting success over an instance still unlike the file.
+* A client also carries the **permissions it may hold** — what ends up in `scope`. Empty means its
+  tokens carry no `scope` claim at all, which is how every client behaved before the field existed;
+  a resource server built on OAuth refuses such a token and names the scope it wanted. Its own
+  address again, and for the neighbouring reason: the audience decides who will take the token, this
+  decides what it may do once taken.
+* `apply` is idempotent: a second run with the same file changes nothing. It compares roles,
+  audiences and scopes **separately** — a client whose several drifted used to have all but the
+  first left as they were, with `apply` reporting success over an instance still unlike the file.
 
 ## 3. How it works
 

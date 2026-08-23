@@ -31,8 +31,10 @@ import ru.workinprogress.shildik.core.feature.admin.RotateClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.RotateKeyUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientAudiencesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientRolesUseCase
+import ru.workinprogress.shildik.core.feature.admin.SetClientScopesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetPasswordUseCase
+import ru.workinprogress.shildik.core.model.Client
 import ru.workinprogress.shildik.core.model.ExternalIdentity
 import ru.workinprogress.shildik.shared.AdminResource
 import ru.workinprogress.shildik.shared.ClientView
@@ -49,6 +51,7 @@ import ru.workinprogress.shildik.shared.ReencryptView
 import ru.workinprogress.shildik.shared.SetAudiencesRequest
 import ru.workinprogress.shildik.shared.SetPasswordRequest
 import ru.workinprogress.shildik.shared.SetRolesRequest
+import ru.workinprogress.shildik.shared.SetScopesRequest
 import ru.workinprogress.shildik.shared.TenantView
 import ru.workinprogress.shildik.shared.UserView
 
@@ -105,15 +108,7 @@ private fun Route.clientRoutes(koin: Koin) {
         koin.get<ListClientsUseCase>()(resource.parent.tenant).respondWith(call) { clients ->
             // The secret is never handed out: it is not stored in the clear and cannot be
             // recovered.
-            clients.map {
-                ClientView(
-                    clientId = it.clientId,
-                    roles = it.roles.sorted(),
-                    public = it.public,
-                    redirectUris = it.redirectUris.sorted(),
-                    audiences = it.audiences.sorted(),
-                )
-            }
+            clients.map { it.view() }
         }
     }
 
@@ -128,6 +123,7 @@ private fun Route.clientRoutes(koin: Koin) {
                 public = request.public,
                 redirectUris = request.redirectUris.toSet(),
                 audiences = request.audiences.toSet(),
+                scopes = request.scopes.toSet(),
             ),
         ).respondWith(call, HttpStatusCode.Created) {
             ClientWithSecret(it.clientId, it.secret, it.roles.sorted())
@@ -155,7 +151,7 @@ private fun Route.clientRoutes(koin: Koin) {
                 client.clientId,
                 request.secret,
             ),
-        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted(), it.audiences.sorted()) }
+        ).respondWith(call) { it.view() }
     }
 
     put<AdminResource.Tenants.ByTenant.Clients.ByClient.Roles> { resource ->
@@ -168,7 +164,7 @@ private fun Route.clientRoutes(koin: Koin) {
                 client.clientId,
                 request.roles.toSet(),
             ),
-        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted(), it.audiences.sorted()) }
+        ).respondWith(call) { it.view() }
     }
 
     put<AdminResource.Tenants.ByTenant.Clients.ByClient.Audiences> { resource ->
@@ -181,7 +177,20 @@ private fun Route.clientRoutes(koin: Koin) {
                 client.clientId,
                 request.audiences.toSet(),
             ),
-        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted(), it.audiences.sorted()) }
+        ).respondWith(call) { it.view() }
+    }
+
+    put<AdminResource.Tenants.ByTenant.Clients.ByClient.ScopesResource> { resource ->
+        val client = resource.parent
+        val request = call.receive<SetScopesRequest>()
+        koin
+            .get<SetClientScopesUseCase>()(
+            SetClientScopesUseCase.Params(
+                client.parent.parent.tenant,
+                client.clientId,
+                request.scopes.toSet(),
+            ),
+        ).respondWith(call) { it.view() }
     }
 
     delete<AdminResource.Tenants.ByTenant.Clients.ByClient> { resource ->
@@ -304,3 +313,18 @@ private suspend inline fun <T, reified R : Any> Result<T>.respondWith(
         },
     )
 }
+
+/**
+ * How a client is shown. One place rather than one per handler: the previous five copies each had
+ * to be remembered when a field was added, and a field forgotten in one of them would be a client
+ * that looks different depending on which call you made.
+ */
+private fun Client.view() =
+    ClientView(
+        clientId = clientId,
+        roles = roles.sorted(),
+        public = public,
+        redirectUris = redirectUris.sorted(),
+        audiences = audiences.sorted(),
+        scopes = scopes.sorted(),
+    )

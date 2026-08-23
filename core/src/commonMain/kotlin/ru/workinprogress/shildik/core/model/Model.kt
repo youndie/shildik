@@ -61,6 +61,20 @@ data class Client(
      * somebody else's service and spend it there, which is the whole reason the claim exists.
      */
     val audiences: Set<String> = emptySet(),
+    /**
+     * The permissions this client may hold, and the only values that can end up in `scope`.
+     *
+     * The audience says **where** a token may be spent; this says **what** may be done there, and a
+     * resource server needs both. Everything built around OAuth reads `scope` for the second
+     * question — an MCP server refuses a token without the scope it wants, naming it in the
+     * challenge — while roles are ours and are read by our own services only.
+     *
+     * Empty means a token with no `scope` claim at all, which is what every token looked like
+     * before this existed. Protocol scopes (`openid` and its neighbours) are not listed here and
+     * never need granting: they tell us which tokens to issue, not what the bearer may do — see
+     * [ru.workinprogress.shildik.core.feature.token.Scopes].
+     */
+    val scopes: Set<String> = emptySet(),
 ) {
     init {
         require(clientId.isNotBlank()) { "clientId must not be blank" }
@@ -72,6 +86,8 @@ data class Client(
     fun allowsRedirect(uri: String): Boolean = uri in redirectUris
 
     fun allowsAudience(resource: String): Boolean = resource in audiences
+
+    fun allowsScope(scope: String): Boolean = scope in scopes
 }
 
 /**

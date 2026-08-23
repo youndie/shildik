@@ -127,6 +127,23 @@ class ClientAudiences : ApiCommand("audiences") {
         }
 }
 
+class ClientScopes : ApiCommand("scopes") {
+    private val clientId by argument("clientId")
+    private val scopes by option("--scope", help = "Permission this client may hold, repeatable").multiple()
+
+    override fun run() =
+        run { api ->
+            val updated = api.setScopes(tenant, clientId, scopes)
+            out.record(
+                listOf(
+                    "clientId" to updated.clientId,
+                    // Empty on purpose when the list was cleared: "none" would read as a value.
+                    "scopes" to updated.scopes.joinToString(" "),
+                ),
+            )
+        }
+}
+
 class ClientCreate : ApiCommand("create") {
     private val clientId by argument("clientId")
     private val roles by option("--role", help = "Client role, repeatable").multiple()
@@ -144,9 +161,15 @@ class ClientCreate : ApiCommand("create") {
      */
     private val audiences by option("--audience", help = "Resource this client may hold a token for, repeatable").multiple()
 
+    /**
+     * What its tokens may permit where they are spent. Without one they carry no `scope`, and a
+     * resource server built on OAuth refuses them — naming the scope it wanted in the challenge.
+     */
+    private val scopes by option("--scope", help = "Permission this client may hold, repeatable").multiple()
+
     override fun run() =
         run { api ->
-            val created = api.createClient(tenant, clientId, roles, public, redirectUris, audiences)
+            val created = api.createClient(tenant, clientId, roles, public, redirectUris, audiences, scopes)
             val secret = created.secret
             if (secret == null) {
                 out.record(
@@ -362,6 +385,7 @@ fun shildikCommand(): CliktCommand =
             ClientRotateSecret(),
             ClientSetRoles(),
             ClientAudiences(),
+            ClientScopes(),
             ClientImportSecret(),
             ClientDelete(),
         ),

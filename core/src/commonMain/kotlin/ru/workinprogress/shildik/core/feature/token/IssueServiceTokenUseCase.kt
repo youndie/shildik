@@ -46,8 +46,10 @@ class IssueServiceTokenUseCase(
             if (!Secrets.matches(client.secretHash, Secrets.hash(params.clientSecret))) throw InvalidClient()
 
             // After the secret, not before: which resources a client may name is not information
-            // somebody who failed to authenticate has any business learning.
+            // somebody who failed to authenticate has any business learning. The same goes for
+            // which permissions it holds.
             val audience = Audiences.resolve(client, params.resources)
+            val scope = Scopes.resolve(client, params.scopes)
 
             val key = activeKey.forTenant(tenant.id)
             val now = clock.now()
@@ -66,12 +68,14 @@ class IssueServiceTokenUseCase(
                             JsonObject(
                                 mapOf("roles" to JsonArray(client.roles.sorted().map(::JsonPrimitive))),
                             ),
-                    ) + (Audiences.claim(audience)?.let { mapOf("aud" to it) } ?: emptyMap()),
+                    ) + (Audiences.claim(audience)?.let { mapOf("aud" to it) } ?: emptyMap()) +
+                        (Scopes.claim(scope)?.let { mapOf("scope" to JsonPrimitive(it)) } ?: emptyMap()),
                 )
 
             IssuedToken(
                 accessToken = Jws.sign(key, claims),
                 expiresInSeconds = TOKEN_TTL.inWholeSeconds,
+                scope = Scopes.claim(scope),
             )
         }
 
@@ -81,6 +85,8 @@ class IssueServiceTokenUseCase(
         val clientSecret: String,
         /** RFC 8707 `resource`, as many as were sent. Empty means "whatever this client is for". */
         val resources: Set<String> = emptySet(),
+        /** The `scope` parameter, already split. Empty means "whatever this client may do". */
+        val scopes: Set<String> = emptySet(),
     )
 
     companion object {
@@ -96,4 +102,12 @@ class IssueServiceTokenUseCase(
 data class IssuedToken(
     val accessToken: String,
     val expiresInSeconds: Long,
+    /**
+     * What the token actually permits, echoed back.
+     *
+     * RFC 6749 §5.1 requires this whenever it differs from what was asked for, and here it always
+     * may: asking for nothing yields everything the client holds. `null` when the token permits
+     * nothing, so the field simply does not appear — as it did not before scopes existed.
+     */
+    val scope: String? = null,
 )

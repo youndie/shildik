@@ -18,6 +18,7 @@ import ru.workinprogress.shildik.core.feature.admin.RotateClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.RotateKeyUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientAudiencesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientRolesUseCase
+import ru.workinprogress.shildik.core.feature.admin.SetClientScopesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetPasswordUseCase
 import ru.workinprogress.shildik.core.feature.auth.AuthMethodRegistry
@@ -66,6 +67,7 @@ fun domainModule(): Module =
         singleOf(::ListUsersUseCase)
         singleOf(::SetClientRolesUseCase)
         singleOf(::SetClientAudiencesUseCase)
+        singleOf(::SetClientScopesUseCase)
         singleOf(::DeleteClientUseCase)
         singleOf(::ListClientsUseCase)
         single { RotateKeyUseCase(get(), get(), get(), get(), get()) }

@@ -33,6 +33,7 @@ class IssueUserTokensUseCase(
         nonce: String?,
         scope: String,
         audience: Set<String> = emptySet(),
+        permissions: Set<String> = emptySet(),
     ): UserTokens {
         val key = activeKey.forTenant(tenant.id)
         val now = clock.now()
@@ -65,7 +66,10 @@ class IssueUserTokensUseCase(
         val accessClaims =
             JsonObject(
                 common + profile + mapOf("typ" to JsonPrimitive("Bearer")) +
-                    (Audiences.claim(audience)?.let { mapOf("aud" to it) } ?: emptyMap()),
+                    (Audiences.claim(audience)?.let { mapOf("aud" to it) } ?: emptyMap()) +
+                    // The permissions go into the access token only. The id_token says who signed
+                    // in, and what they may do somewhere else is none of its business.
+                    (Scopes.claim(permissions)?.let { mapOf("scope" to JsonPrimitive(it)) } ?: emptyMap()),
             )
 
         val idClaims =
@@ -86,7 +90,11 @@ class IssueUserTokensUseCase(
             accessToken = Jws.sign(key, accessClaims),
             idToken = Jws.sign(key, idClaims),
             expiresInSeconds = IssueServiceTokenUseCase.TOKEN_TTL.inWholeSeconds,
-            scope = scope,
+            // What came out, not what was asked for — RFC 6749 §5.1 asks for the difference to be
+            // stated, and there is one whenever a client holds a permission it did not name. The
+            // protocol scopes are kept because the client compares them: `offline_access` is why it
+            // has a refresh token in its hands.
+            scope = Scopes.claim(Scopes.parse(scope).intersect(Scopes.PROTOCOL) + permissions).orEmpty(),
         )
     }
 }

@@ -58,6 +58,18 @@ class AdminResource {
                     class Audiences(
                         val parent: ByClient,
                     )
+
+                    /**
+                     * What this client's tokens may permit where they are spent.
+                     *
+                     * Its own address for the same reason as the one above: this decides what a
+                     * resource server will let the client do, and that is not a field to change in
+                     * passing.
+                     */
+                    @Resource("scopes")
+                    class ScopesResource(
+                        val parent: ByClient,
+                    )
                 }
             }
 
@@ -119,6 +131,8 @@ data class ClientView(
     val redirectUris: List<String> = emptyList(),
     /** Resources this client may hold a token for (RFC 8707). Empty means its tokens carry no `aud`. */
     val audiences: List<String> = emptyList(),
+    /** Permissions this client may hold. Empty means its tokens carry no `scope`. */
+    val scopes: List<String> = emptyList(),
 )
 
 /** The response to creation and reissue: the **only** place a secret is ever visible. */
@@ -169,6 +183,13 @@ data class CreateClientRequest(
      * existed, and which a resource server that checks the audience refuses.
      */
     val audiences: List<String> = emptyList(),
+    /**
+     * Permissions this client may hold.
+     *
+     * Absent means its tokens carry no `scope` claim — how every client behaved before this
+     * existed, and what a resource server built on OAuth refuses.
+     */
+    val scopes: List<String> = emptyList(),
 )
 
 @Serializable
@@ -225,6 +246,11 @@ data class SetAudiencesRequest(
 )
 
 @Serializable
+data class SetScopesRequest(
+    val scopes: List<String>,
+)
+
+@Serializable
 data class ErrorView(
     val error: String,
 )
@@ -259,6 +285,7 @@ data class ExportedClient(
     val public: Boolean = false,
     val redirectUris: List<String> = emptyList(),
     val audiences: List<String> = emptyList(),
+    val scopes: List<String> = emptyList(),
 )
 
 const val SECRET_PLACEHOLDER = "\${SECRET}"

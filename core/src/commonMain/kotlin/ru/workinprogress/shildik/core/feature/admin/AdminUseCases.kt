@@ -88,6 +88,7 @@ class CreateClientUseCase(
                         public = params.public,
                         redirectUris = params.redirectUris,
                         audiences = params.audiences,
+                        scopes = params.scopes,
                     ),
                 )
                 CreatedClient(params.clientId, secret, params.roles)
@@ -102,6 +103,8 @@ class CreateClientUseCase(
         val redirectUris: Set<String> = emptySet(),
         /** Resources this client may hold a token for (RFC 8707). Empty means no `aud` at all. */
         val audiences: Set<String> = emptySet(),
+        /** Permissions this client may hold. Empty means no `scope` claim at all. */
+        val scopes: Set<String> = emptySet(),
     )
 }
 
@@ -226,6 +229,36 @@ class SetClientAudiencesUseCase(
         val realm: String,
         val clientId: String,
         val audiences: Set<String>,
+    )
+}
+
+/**
+ * Setting which permissions a client may hold.
+ *
+ * Its own address for the same reason as audiences: the clients that need a permission list are the
+ * ones already in service, and recreating one would mean a new secret and a service down until
+ * somebody noticed.
+ */
+class SetClientScopesUseCase(
+    private val tenants: TenantRepository,
+    private val clients: ClientRepository,
+    private val transactions: TransactionManager,
+) : UseCase<SetClientScopesUseCase.Params, Client> {
+    override suspend fun invoke(params: Params): Result<Client> =
+        suspendRunCatching {
+            transactions.withTransaction {
+                val tenant = tenants.byRealm(params.realm) ?: throw NotFound("tenant '${params.realm}'")
+                val existing = clients.find(tenant.id, params.clientId) ?: throw NotFound("client '${params.clientId}'")
+                val updated = existing.copy(scopes = params.scopes)
+                clients.upsert(updated)
+                updated
+            }
+        }
+
+    class Params(
+        val realm: String,
+        val clientId: String,
+        val scopes: Set<String>,
     )
 }
 

@@ -9,6 +9,7 @@ import ru.workinprogress.shildik.core.feature.auth.AuthenticatedSubject
 import ru.workinprogress.shildik.core.feature.auth.InteractiveAuthMethod
 import ru.workinprogress.shildik.core.feature.auth.RedirectingAuthMethod
 import ru.workinprogress.shildik.core.feature.token.Audiences
+import ru.workinprogress.shildik.core.feature.token.Scopes
 import ru.workinprogress.shildik.core.feature.token.VerifyOwnTokenUseCase
 import ru.workinprogress.shildik.core.model.AuthorizationCode
 import ru.workinprogress.shildik.core.model.ExternalIdentity
@@ -247,6 +248,11 @@ class StartAuthorizationUseCase(
             if (params.codeChallenge.isNotBlank() && params.codeChallengeMethod != Pkce.METHOD_S256) {
                 throw OAuthRejection("invalid_request", "only S256 is supported")
             }
+            // Here rather than only at the exchange: a scope the client was never granted is a
+            // configuration mistake, and finding it out after somebody has typed their password
+            // costs them the sign-in and tells them nothing. The same rule runs again when the code
+            // is exchanged — this one is the early word, not the enforcement.
+            Scopes.resolve(client, Scopes.parse(params.scope))
 
             // Two kinds park the request: the one that takes the person off to another provider,
             // and the one that needs our form. The only difference is what to return to the
@@ -432,6 +438,9 @@ class ExchangeCodeUseCase(
                     clientId = client.clientId,
                     refreshToken = refresh,
                     audience = Audiences.resolve(client, params.resources),
+                    // From what was asked for at the authorization step, not from this request:
+                    // the person agreed to that, and a code exchange is not the place to widen it.
+                    permissions = Scopes.resolve(client, Scopes.parse(stored.scope)),
                 )
             }
         }
@@ -529,6 +538,10 @@ class RefreshTokensUseCase(
                     scope = stored.scope,
                     refreshToken = next,
                     audience = Audiences.resolve(client, params.resources),
+                    // Re-resolved rather than carried in the refresh token: a permission taken away
+                    // from a client has to stop appearing in its tokens without waiting for the
+                    // session to end.
+                    permissions = Scopes.resolve(client, Scopes.parse(stored.scope)),
                 )
             }
         }
@@ -606,6 +619,8 @@ data class RefreshedSession(
     val refreshToken: String,
     /** What the refreshed access token will be addressed to. */
     val audience: Set<String> = emptySet(),
+    /** What it will permit there. */
+    val permissions: Set<String> = emptySet(),
 )
 
 data class ExchangedCode(
@@ -616,6 +631,8 @@ data class ExchangedCode(
     val refreshToken: String?,
     /** What the access token will be addressed to. Resolved here, where the client is known. */
     val audience: Set<String> = emptySet(),
+    /** What it will permit there. */
+    val permissions: Set<String> = emptySet(),
 )
 
 /**

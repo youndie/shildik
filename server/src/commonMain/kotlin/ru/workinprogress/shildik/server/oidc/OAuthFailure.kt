@@ -5,6 +5,7 @@ import ru.workinprogress.shildik.core.feature.admin.NotFound
 import ru.workinprogress.shildik.core.feature.browser.OAuthRejection
 import ru.workinprogress.shildik.core.feature.token.InvalidClient
 import ru.workinprogress.shildik.core.feature.token.UnknownResource
+import ru.workinprogress.shildik.core.feature.token.UnknownScope
 
 /**
  * How to answer a failure in the OIDC contour — and what to report while doing so.
@@ -41,6 +42,11 @@ internal data class OAuthFailure(
                 // needs to see that the resource is missing from its list, not that its secret is
                 // wrong (RFC 8707 §2). It reveals nothing — the asker already named the resource.
                 is UnknownResource -> OAuthFailure("invalid_target", HttpStatusCode.BadRequest, report = false)
+
+                // A permission the client was not granted, and the same reasoning one line up:
+                // RFC 6749 §5.2 has a code for exactly this, and whoever configured the client
+                // needs to read "the list is missing an entry" rather than "the secret is wrong".
+                is UnknownScope -> OAuthFailure("invalid_scope", HttpStatusCode.BadRequest, report = false)
 
                 // Everything else is ours. We answer **500**, not 400: blaming our own fault on
                 // the client hides it both from them and from us.
