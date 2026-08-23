@@ -389,7 +389,21 @@ fun Application.oidcRoutes(koin: Koin) {
 
         get<RealmResource.Discovery> { resource ->
             call.readableByAPage()
-            val issuer = issuers.issuerFor(resource.parent.realm)
+            val realm = resource.parent.realm
+
+            // Every address below is built out of the issuer, so a document for a realm that does
+            // not exist looks exactly like a document for one that does. Discovery is the first
+            // request a client makes and the first thing anybody reads to check a configuration:
+            // answering it for a realm nobody ever created means a mistyped name reads as a healthy
+            // provider, and the search for the cause goes to the keys, the network, CORS — anywhere
+            // but the realm. The lie used to surface only at `jwks`, the first address here that
+            // asks storage anything.
+            if (tenants.byRealm(realm) == null) {
+                call.respond(HttpStatusCode.NotFound, OAuthError("unknown_realm"))
+                return@get
+            }
+
+            val issuer = issuers.issuerFor(realm)
 
             call.respond(
                 DiscoveryDocument(
