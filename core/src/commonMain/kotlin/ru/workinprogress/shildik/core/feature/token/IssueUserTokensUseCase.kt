@@ -32,6 +32,7 @@ class IssueUserTokensUseCase(
         clientId: String,
         nonce: String?,
         scope: String,
+        audience: Set<String> = emptySet(),
     ): UserTokens {
         val key = activeKey.forTenant(tenant.id)
         val now = clock.now()
@@ -58,7 +59,14 @@ class IssueUserTokensUseCase(
 
         // `email` in the access token is not decoration: the rule `email != null && azp ==
         // "web-app"` in three relying services tells a person from a program by it.
-        val accessClaims = JsonObject(common + profile + mapOf("typ" to JsonPrimitive("Bearer")))
+        // The access token is the one presented to services, so it is the one that carries the
+        // audience. The id_token below keeps naming the client instead: it is addressed to whoever
+        // started the sign-in and is not meant to travel on.
+        val accessClaims =
+            JsonObject(
+                common + profile + mapOf("typ" to JsonPrimitive("Bearer")) +
+                    (Audiences.claim(audience)?.let { mapOf("aud" to it) } ?: emptyMap()),
+            )
 
         val idClaims =
             JsonObject(

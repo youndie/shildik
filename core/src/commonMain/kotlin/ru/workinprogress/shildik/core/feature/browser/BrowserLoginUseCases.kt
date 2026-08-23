@@ -8,6 +8,7 @@ import ru.workinprogress.shildik.core.feature.auth.AuthRequest
 import ru.workinprogress.shildik.core.feature.auth.AuthenticatedSubject
 import ru.workinprogress.shildik.core.feature.auth.InteractiveAuthMethod
 import ru.workinprogress.shildik.core.feature.auth.RedirectingAuthMethod
+import ru.workinprogress.shildik.core.feature.token.Audiences
 import ru.workinprogress.shildik.core.feature.token.VerifyOwnTokenUseCase
 import ru.workinprogress.shildik.core.model.AuthorizationCode
 import ru.workinprogress.shildik.core.model.ExternalIdentity
@@ -430,6 +431,7 @@ class ExchangeCodeUseCase(
                     nonce = stored.nonce,
                     clientId = client.clientId,
                     refreshToken = refresh,
+                    audience = Audiences.resolve(client, params.resources),
                 )
             }
         }
@@ -440,6 +442,8 @@ class ExchangeCodeUseCase(
         val code: String,
         val redirectUri: String,
         val codeVerifier: String?,
+        /** RFC 8707 `resource`. Empty means "whatever this client is for" — see [Audiences]. */
+        val resources: Set<String> = emptySet(),
     )
 
     companion object {
@@ -519,7 +523,13 @@ class RefreshTokensUseCase(
                     ),
                 )
 
-                RefreshedSession(user = user, clientId = client.clientId, scope = stored.scope, refreshToken = next)
+                RefreshedSession(
+                    user = user,
+                    clientId = client.clientId,
+                    scope = stored.scope,
+                    refreshToken = next,
+                    audience = Audiences.resolve(client, params.resources),
+                )
             }
         }
 
@@ -527,6 +537,8 @@ class RefreshTokensUseCase(
         val realm: String,
         val clientId: String,
         val refreshToken: String,
+        /** RFC 8707 `resource`, asked again at every refresh — a token is addressed, not inherited. */
+        val resources: Set<String> = emptySet(),
     )
 
     companion object {
@@ -592,6 +604,8 @@ data class RefreshedSession(
     val clientId: String,
     val scope: String,
     val refreshToken: String,
+    /** What the refreshed access token will be addressed to. */
+    val audience: Set<String> = emptySet(),
 )
 
 data class ExchangedCode(
@@ -600,6 +614,8 @@ data class ExchangedCode(
     val nonce: String?,
     val clientId: String,
     val refreshToken: String?,
+    /** What the access token will be addressed to. Resolved here, where the client is known. */
+    val audience: Set<String> = emptySet(),
 )
 
 /**

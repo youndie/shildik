@@ -47,6 +47,7 @@ class Sqlx4kClientRepository(
 
         replace("client_redirect_uris", "redirect_uri", client, client.redirectUris)
         replace("client_roles", "role", client, client.roles)
+        replace("client_audiences", "audience", client, client.audiences)
     }
 
     override suspend fun delete(
@@ -54,7 +55,7 @@ class Sqlx4kClientRepository(
         clientId: String,
     ) {
         // The order matters: roles and addresses have a foreign key on the client.
-        listOf("client_roles", "client_redirect_uris").forEach { table ->
+        listOf("client_roles", "client_redirect_uris", "client_audiences").forEach { table ->
             db.exec(
                 sql("delete from $table where tenant_id = :tenant and client_id = :client")
                     .bind("tenant", tenantId.value)
@@ -113,6 +114,7 @@ class Sqlx4kClientRepository(
             roles = valuesOf("client_roles", "role", tenantId, clientId),
             public = row.flag("public"),
             redirectUris = valuesOf("client_redirect_uris", "redirect_uri", tenantId, clientId),
+            audiences = valuesOf("client_audiences", "audience", tenantId, clientId),
         )
     }
 }

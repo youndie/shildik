@@ -30,6 +30,7 @@ import ru.workinprogress.shildik.shared.ImportUserRequest
 import ru.workinprogress.shildik.shared.ImportedUserView
 import ru.workinprogress.shildik.shared.KeyView
 import ru.workinprogress.shildik.shared.ReencryptView
+import ru.workinprogress.shildik.shared.SetAudiencesRequest
 import ru.workinprogress.shildik.shared.SetPasswordRequest
 import ru.workinprogress.shildik.shared.SetRolesRequest
 import ru.workinprogress.shildik.shared.TenantView
@@ -99,10 +100,11 @@ class AdminClient(
         roles: List<String>,
         public: Boolean = false,
         redirectUris: List<String> = emptyList(),
+        audiences: List<String> = emptyList(),
     ): ClientWithSecret =
         http
             .post(clients(realm)) {
-                jsonBody(CreateClientRequest(clientId, roles, public, redirectUris))
+                jsonBody(CreateClientRequest(clientId, roles, public, redirectUris, audiences))
             }.decode()
 
     suspend fun rotateSecret(
@@ -153,6 +155,19 @@ class AdminClient(
         http
             .post(AdminResource.Tenants.ByTenant.Users(tenant(realm))) {
                 jsonBody(request)
+            }.decode()
+
+    suspend fun setAudiences(
+        realm: String,
+        clientId: String,
+        audiences: List<String>,
+    ): ClientView =
+        http
+            .put(
+                AdminResource.Tenants.ByTenant.Clients.ByClient
+                    .Audiences(client(realm, clientId)),
+            ) {
+                jsonBody(SetAudiencesRequest(audiences))
             }.decode()
 
     suspend fun setRoles(

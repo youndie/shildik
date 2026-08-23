@@ -29,6 +29,7 @@ import ru.workinprogress.shildik.core.feature.admin.ReencryptKeysUseCase
 import ru.workinprogress.shildik.core.feature.admin.RetireKeyUseCase
 import ru.workinprogress.shildik.core.feature.admin.RotateClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.RotateKeyUseCase
+import ru.workinprogress.shildik.core.feature.admin.SetClientAudiencesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientRolesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetPasswordUseCase
@@ -45,6 +46,7 @@ import ru.workinprogress.shildik.shared.ImportUserRequest
 import ru.workinprogress.shildik.shared.ImportedUserView
 import ru.workinprogress.shildik.shared.KeyView
 import ru.workinprogress.shildik.shared.ReencryptView
+import ru.workinprogress.shildik.shared.SetAudiencesRequest
 import ru.workinprogress.shildik.shared.SetPasswordRequest
 import ru.workinprogress.shildik.shared.SetRolesRequest
 import ru.workinprogress.shildik.shared.TenantView
@@ -109,6 +111,7 @@ private fun Route.clientRoutes(koin: Koin) {
                     roles = it.roles.sorted(),
                     public = it.public,
                     redirectUris = it.redirectUris.sorted(),
+                    audiences = it.audiences.sorted(),
                 )
             }
         }
@@ -124,6 +127,7 @@ private fun Route.clientRoutes(koin: Koin) {
                 roles = request.roles.toSet(),
                 public = request.public,
                 redirectUris = request.redirectUris.toSet(),
+                audiences = request.audiences.toSet(),
             ),
         ).respondWith(call, HttpStatusCode.Created) {
             ClientWithSecret(it.clientId, it.secret, it.roles.sorted())
@@ -151,7 +155,7 @@ private fun Route.clientRoutes(koin: Koin) {
                 client.clientId,
                 request.secret,
             ),
-        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted()) }
+        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted(), it.audiences.sorted()) }
     }
 
     put<AdminResource.Tenants.ByTenant.Clients.ByClient.Roles> { resource ->
@@ -164,7 +168,20 @@ private fun Route.clientRoutes(koin: Koin) {
                 client.clientId,
                 request.roles.toSet(),
             ),
-        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted()) }
+        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted(), it.audiences.sorted()) }
+    }
+
+    put<AdminResource.Tenants.ByTenant.Clients.ByClient.Audiences> { resource ->
+        val client = resource.parent
+        val request = call.receive<SetAudiencesRequest>()
+        koin
+            .get<SetClientAudiencesUseCase>()(
+            SetClientAudiencesUseCase.Params(
+                client.parent.parent.tenant,
+                client.clientId,
+                request.audiences.toSet(),
+            ),
+        ).respondWith(call) { ClientView(it.clientId, it.roles.sorted(), it.public, it.redirectUris.sorted(), it.audiences.sorted()) }
     }
 
     delete<AdminResource.Tenants.ByTenant.Clients.ByClient> { resource ->

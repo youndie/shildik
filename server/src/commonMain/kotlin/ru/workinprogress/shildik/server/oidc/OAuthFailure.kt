@@ -4,6 +4,7 @@ import io.ktor.http.HttpStatusCode
 import ru.workinprogress.shildik.core.feature.admin.NotFound
 import ru.workinprogress.shildik.core.feature.browser.OAuthRejection
 import ru.workinprogress.shildik.core.feature.token.InvalidClient
+import ru.workinprogress.shildik.core.feature.token.UnknownResource
 
 /**
  * How to answer a failure in the OIDC contour — and what to report while doing so.
@@ -34,6 +35,12 @@ internal data class OAuthFailure(
                 // normally, nothing to report. Outwards all three get the same answer: telling
                 // them apart would let somebody enumerate clients (protocol §2).
                 is InvalidClient -> OAuthFailure("invalid_client", HttpStatusCode.BadRequest, report = false)
+
+                // A resource the client was not granted. Deliberately its own code rather than
+                // `invalid_client`: the client is who it says it is, and whoever configured it
+                // needs to see that the resource is missing from its list, not that its secret is
+                // wrong (RFC 8707 §2). It reveals nothing — the asker already named the resource.
+                is UnknownResource -> OAuthFailure("invalid_target", HttpStatusCode.BadRequest, report = false)
 
                 // Everything else is ours. We answer **500**, not 400: blaming our own fault on
                 // the client hides it both from them and from us.

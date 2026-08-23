@@ -31,7 +31,14 @@ configuration has to travel to git and be applied back with one command.
 * A **public client** (a browser one) gets no secret at all, and `rotate-secret` does nothing for
   it: there is nothing to rotate. It must have at least one `redirect_uri` — without one a sign-in
   is impossible, and that is an error at creation rather than "not configured yet".
-* `apply` is idempotent: a second run with the same file changes nothing.
+* A client carries the **resources it may hold a token for** — what ends up in `aud`
+  ([protocol-oidc-subset §2](../api/protocol-oidc-subset.md)). Empty is allowed and means its tokens
+  carry no `aud` at all, which is how every client behaved before the field existed; a resource
+  server that checks the audience refuses such a token. It has its own address rather than being a
+  field of a general update: changing it changes which services will accept this client's tokens.
+* `apply` is idempotent: a second run with the same file changes nothing. It compares roles and
+  audiences **separately** — a client whose both drifted used to have the second left as it was,
+  with `apply` reporting success over an instance still unlike the file.
 
 ## 3. How it works
 
