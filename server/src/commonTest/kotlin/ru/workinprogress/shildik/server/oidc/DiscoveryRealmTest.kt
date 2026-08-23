@@ -112,7 +112,7 @@ class DiscoveryRealmTest {
         }
 }
 
-private object OneRealm : TenantRepository {
+internal object OneRealm : TenantRepository {
     val realm: String = "main"
 
     private val tenant = Tenant(id = TenantId("t-1"), realm = realm)
