@@ -110,6 +110,23 @@ class ClientList : ApiCommand("list") {
         }
 }
 
+class ClientAudiences : ApiCommand("audiences") {
+    private val clientId by argument("clientId")
+    private val audiences by option("--audience", help = "Resource this client may hold a token for, repeatable").multiple()
+
+    override fun run() =
+        run { api ->
+            val updated = api.setAudiences(tenant, clientId, audiences)
+            out.record(
+                listOf(
+                    "clientId" to updated.clientId,
+                    // Empty on purpose when the list was cleared: "none" would read as a value.
+                    "audiences" to updated.audiences.joinToString(" "),
+                ),
+            )
+        }
+}
+
 class ClientCreate : ApiCommand("create") {
     private val clientId by argument("clientId")
     private val roles by option("--role", help = "Client role, repeatable").multiple()
@@ -121,9 +138,15 @@ class ClientCreate : ApiCommand("create") {
     private val public by option("--public", help = "Browser client: PKCE instead of a secret").flag()
     private val redirectUris by option("--redirect-uri", help = "Where to return the code; matched exactly").multiple()
 
+    /**
+     * Which resources this client may hold a token for (RFC 8707). Without one its tokens carry no
+     * `aud`, and a service that checks the audience will refuse them.
+     */
+    private val audiences by option("--audience", help = "Resource this client may hold a token for, repeatable").multiple()
+
     override fun run() =
         run { api ->
-            val created = api.createClient(tenant, clientId, roles, public, redirectUris)
+            val created = api.createClient(tenant, clientId, roles, public, redirectUris, audiences)
             val secret = created.secret
             if (secret == null) {
                 out.record(
@@ -338,6 +361,7 @@ fun shildikCommand(): CliktCommand =
             ClientCreate(),
             ClientRotateSecret(),
             ClientSetRoles(),
+            ClientAudiences(),
             ClientImportSecret(),
             ClientDelete(),
         ),

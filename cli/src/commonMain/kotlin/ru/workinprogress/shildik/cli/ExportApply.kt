@@ -29,6 +29,7 @@ class Export : ApiCommand("export") {
                                     roles = it.roles,
                                     public = it.public,
                                     redirectUris = it.redirectUris,
+                                    audiences = it.audiences,
                                 )
                             },
                     )
@@ -60,6 +61,7 @@ sealed interface Change {
         val roles: List<String>,
         val public: Boolean = false,
         val redirectUris: List<String> = emptyList(),
+        val audiences: List<String> = emptyList(),
     ) : Change {
         override val summary get() =
             if (public) {
@@ -67,6 +69,15 @@ sealed interface Change {
             } else {
                 "+ client $clientId in $realm [${roles.joinToString(" ")}]"
             }
+    }
+
+    data class UpdateAudiences(
+        val realm: String,
+        val clientId: String,
+        val from: List<String>,
+        val to: List<String>,
+    ) : Change {
+        override val summary get() = "~ audiences $clientId: [${from.joinToString(" ")}] → [${to.joinToString(" ")}]"
     }
 
     data class UpdateRoles(
@@ -112,20 +123,50 @@ suspend fun planChanges(
             changes += Change.CreateTenant(tenant.realm)
             // No tenant means no clients either; there is nothing to ask the server about.
             tenant.clients.forEach {
-                changes += Change.CreateClient(tenant.realm, it.clientId, it.roles.sorted(), it.public, it.redirectUris)
+                changes +=
+                    Change.CreateClient(
+                        tenant.realm,
+                        it.clientId,
+                        it.roles.sorted(),
+                        it.public,
+                        it.redirectUris,
+                        it.audiences,
+                    )
             }
             continue
         }
 
-        val existing = api.listClients(tenant.realm).associate { it.clientId to it.roles }
+        val existing = api.listClients(tenant.realm).associateBy { it.clientId }
         val described = tenant.clients.map { it.clientId }.toSet()
 
         for (client in tenant.clients) {
             val current = existing[client.clientId]
-            when {
-                current == null -> changes += Change.CreateClient(tenant.realm, client.clientId, client.roles.sorted())
-                current.toSet() != client.roles.toSet() ->
-                    changes += Change.UpdateRoles(tenant.realm, client.clientId, current.sorted(), client.roles.sorted())
+            if (current == null) {
+                changes +=
+                    Change.CreateClient(
+                        tenant.realm,
+                        client.clientId,
+                        client.roles.sorted(),
+                        client.public,
+                        client.redirectUris,
+                        client.audiences,
+                    )
+                continue
+            }
+            // Both differences are reported, not the first one: a client whose roles and audiences
+            // both drifted used to have the second difference hidden by the first, and `apply`
+            // would then leave the instance still unlike the file while reporting success.
+            if (current.roles.toSet() != client.roles.toSet()) {
+                changes += Change.UpdateRoles(tenant.realm, client.clientId, current.roles.sorted(), client.roles.sorted())
+            }
+            if (current.audiences.toSet() != client.audiences.toSet()) {
+                changes +=
+                    Change.UpdateAudiences(
+                        tenant.realm,
+                        client.clientId,
+                        current.audiences.sorted(),
+                        client.audiences.sorted(),
+                    )
             }
         }
 
@@ -198,32 +239,38 @@ class Apply : ApiCommand("apply") {
                 }
 
                 val existingClients =
-                    api.listClients(tenant.realm).associate { it.clientId to it.roles }
+                    api.listClients(tenant.realm).associateBy { it.clientId }
 
                 for (client in tenant.clients) {
                     val current = existingClients[client.clientId]
-                    when {
-                        current == null -> {
-                            val created =
-                                api.createClient(
-                                    tenant.realm,
-                                    client.clientId,
-                                    client.roles,
-                                    client.public,
-                                    client.redirectUris,
-                                )
-                            out.message("Client created: ${client.clientId}")
-                            // A public client has no secret — printing "secret: null" would be
-                            // worse than staying quiet.
-                            created.secret?.let { out.secret("secret:${client.clientId}", it) }
-                        }
+                    if (current == null) {
+                        val created =
+                            api.createClient(
+                                tenant.realm,
+                                client.clientId,
+                                client.roles,
+                                client.public,
+                                client.redirectUris,
+                                client.audiences,
+                            )
+                        out.message("Client created: ${client.clientId}")
+                        // A public client has no secret — printing "secret: null" would be
+                        // worse than staying quiet.
+                        created.secret?.let { out.secret("secret:${client.clientId}", it) }
+                        continue
+                    }
 
-                        current.toSet() != client.roles.toSet() -> {
-                            api.setRoles(tenant.realm, client.clientId, client.roles)
-                            out.message("Roles updated: ${client.clientId}")
-                        }
-
-                        else -> Unit // Already matches — stay quiet: idempotent means "do nothing".
+                    // Each difference on its own, not the first one that matched: a client whose
+                    // roles and audiences both drifted would otherwise have the second left as it
+                    // was, and `apply` would report success over an instance still unlike the file.
+                    // Silence when nothing differs — idempotent means "do nothing".
+                    if (current.roles.toSet() != client.roles.toSet()) {
+                        api.setRoles(tenant.realm, client.clientId, client.roles)
+                        out.message("Roles updated: ${client.clientId}")
+                    }
+                    if (current.audiences.toSet() != client.audiences.toSet()) {
+                        api.setAudiences(tenant.realm, client.clientId, client.audiences)
+                        out.message("Audiences updated: ${client.clientId}")
                     }
                 }
             }

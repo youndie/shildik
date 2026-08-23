@@ -87,6 +87,7 @@ class CreateClientUseCase(
                         roles = params.roles,
                         public = params.public,
                         redirectUris = params.redirectUris,
+                        audiences = params.audiences,
                     ),
                 )
                 CreatedClient(params.clientId, secret, params.roles)
@@ -99,6 +100,8 @@ class CreateClientUseCase(
         val roles: Set<String>,
         val public: Boolean = false,
         val redirectUris: Set<String> = emptySet(),
+        /** Resources this client may hold a token for (RFC 8707). Empty means no `aud` at all. */
+        val audiences: Set<String> = emptySet(),
     )
 }
 
@@ -193,6 +196,36 @@ class SetClientRolesUseCase(
         val roles: Set<String>,
         val public: Boolean = false,
         val redirectUris: Set<String> = emptySet(),
+    )
+}
+
+/**
+ * Setting which resources a client may hold a token for.
+ *
+ * Separate from creation because the clients that need it most already exist: a service that has
+ * been issuing tokens for a year is exactly the one whose tokens nobody could check the audience
+ * of. Recreating it to add one would mean a new secret and a service down until somebody notices.
+ */
+class SetClientAudiencesUseCase(
+    private val tenants: TenantRepository,
+    private val clients: ClientRepository,
+    private val transactions: TransactionManager,
+) : UseCase<SetClientAudiencesUseCase.Params, Client> {
+    override suspend fun invoke(params: Params): Result<Client> =
+        suspendRunCatching {
+            transactions.withTransaction {
+                val tenant = tenants.byRealm(params.realm) ?: throw NotFound("tenant '${params.realm}'")
+                val existing = clients.find(tenant.id, params.clientId) ?: throw NotFound("client '${params.clientId}'")
+                val updated = existing.copy(audiences = params.audiences)
+                clients.upsert(updated)
+                updated
+            }
+        }
+
+    class Params(
+        val realm: String,
+        val clientId: String,
+        val audiences: Set<String>,
     )
 }
 

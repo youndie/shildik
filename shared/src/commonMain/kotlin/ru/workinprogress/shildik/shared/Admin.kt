@@ -46,6 +46,18 @@ class AdminResource {
                     class Roles(
                         val parent: ByClient,
                     )
+
+                    /**
+                     * Which resources this client may hold a token for.
+                     *
+                     * Its own address rather than a field of some general update: changing it
+                     * changes which services will accept this client's tokens, and that deserves to
+                     * be a request somebody made on purpose.
+                     */
+                    @Resource("audiences")
+                    class Audiences(
+                        val parent: ByClient,
+                    )
                 }
             }
 
@@ -105,6 +117,8 @@ data class ClientView(
     val roles: List<String>,
     val public: Boolean = false,
     val redirectUris: List<String> = emptyList(),
+    /** Resources this client may hold a token for (RFC 8707). Empty means its tokens carry no `aud`. */
+    val audiences: List<String> = emptyList(),
 )
 
 /** The response to creation and reissue: the **only** place a secret is ever visible. */
@@ -148,6 +162,13 @@ data class CreateClientRequest(
     /** A public client is a browser one. It gets no secret. */
     val public: Boolean = false,
     val redirectUris: List<String> = emptyList(),
+    /**
+     * Resources this client may ask a token for (RFC 8707).
+     *
+     * Absent means its tokens carry no `aud` — which is how every client behaved before this
+     * existed, and which a resource server that checks the audience refuses.
+     */
+    val audiences: List<String> = emptyList(),
 )
 
 @Serializable
@@ -199,6 +220,11 @@ data class SetRolesRequest(
 )
 
 @Serializable
+data class SetAudiencesRequest(
+    val audiences: List<String>,
+)
+
+@Serializable
 data class ErrorView(
     val error: String,
 )
@@ -232,6 +258,7 @@ data class ExportedClient(
     val secret: String = SECRET_PLACEHOLDER,
     val public: Boolean = false,
     val redirectUris: List<String> = emptyList(),
+    val audiences: List<String> = emptyList(),
 )
 
 const val SECRET_PLACEHOLDER = "\${SECRET}"

@@ -51,6 +51,16 @@ data class Client(
      * redirect_uri has historically been the main way to steal another client's code.
      */
     val redirectUris: Set<String> = emptySet(),
+    /**
+     * The resources this client may ask a token for, and the only values that can end up in `aud`
+     * (RFC 8707, api/protocol-oidc-subset.md).
+     *
+     * Empty means a token with no `aud` at all — which is what every token looked like before this
+     * existed, and what a resource server that checks the audience refuses. A client is trusted to
+     * name a resource only from this list: without it, any client could obtain a token addressed to
+     * somebody else's service and spend it there, which is the whole reason the claim exists.
+     */
+    val audiences: Set<String> = emptySet(),
 ) {
     init {
         require(clientId.isNotBlank()) { "clientId must not be blank" }
@@ -60,6 +70,8 @@ data class Client(
     }
 
     fun allowsRedirect(uri: String): Boolean = uri in redirectUris
+
+    fun allowsAudience(resource: String): Boolean = resource in audiences
 }
 
 /**

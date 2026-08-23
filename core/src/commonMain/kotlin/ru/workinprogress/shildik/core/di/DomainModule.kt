@@ -16,6 +16,7 @@ import ru.workinprogress.shildik.core.feature.admin.ReencryptKeysUseCase
 import ru.workinprogress.shildik.core.feature.admin.RetireKeyUseCase
 import ru.workinprogress.shildik.core.feature.admin.RotateClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.RotateKeyUseCase
+import ru.workinprogress.shildik.core.feature.admin.SetClientAudiencesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientRolesUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetClientSecretUseCase
 import ru.workinprogress.shildik.core.feature.admin.SetPasswordUseCase
@@ -64,6 +65,7 @@ fun domainModule(): Module =
         singleOf(::EndSessionUseCase)
         singleOf(::ListUsersUseCase)
         singleOf(::SetClientRolesUseCase)
+        singleOf(::SetClientAudiencesUseCase)
         singleOf(::DeleteClientUseCase)
         singleOf(::ListClientsUseCase)
         single { RotateKeyUseCase(get(), get(), get(), get(), get()) }

@@ -124,6 +124,9 @@ fun Application.oidcRoutes(koin: Koin) {
                 realm = realm,
                 clientId = credentials.clientId,
                 clientSecret = credentials.clientSecret,
+                // RFC 8707 allows the parameter more than once, and a client that names two
+                // resources means both — not the last one to arrive.
+                resources = form.getAll("resource").orEmpty().toSet(),
             ),
         ).fold(
             onSuccess = { call.respond(TokenResponse(it.accessToken, it.expiresInSeconds)) },
@@ -430,6 +433,7 @@ private suspend fun io.ktor.server.routing.RoutingContext.exchangeCode(
             code = form["code"].orEmpty(),
             redirectUri = form["redirect_uri"].orEmpty(),
             codeVerifier = form["code_verifier"],
+            resources = form.getAll("resource").orEmpty().toSet(),
         ),
     ).fold(
         onSuccess = { exchanged ->
@@ -445,6 +449,7 @@ private suspend fun io.ktor.server.routing.RoutingContext.exchangeCode(
                     clientId = exchanged.clientId,
                     nonce = exchanged.nonce,
                     scope = exchanged.scope,
+                    audience = exchanged.audience,
                 )
             call.respond(
                 TokenResponse(
@@ -478,6 +483,7 @@ private suspend fun io.ktor.server.routing.RoutingContext.refreshSession(
             realm = realm,
             clientId = clientId,
             refreshToken = form["refresh_token"].orEmpty(),
+            resources = form.getAll("resource").orEmpty().toSet(),
         ),
     ).fold(
         onSuccess = { refreshed ->
@@ -493,6 +499,7 @@ private suspend fun io.ktor.server.routing.RoutingContext.refreshSession(
                     clientId = refreshed.clientId,
                     nonce = null,
                     scope = refreshed.scope,
+                    audience = refreshed.audience,
                 )
             call.respond(
                 TokenResponse(

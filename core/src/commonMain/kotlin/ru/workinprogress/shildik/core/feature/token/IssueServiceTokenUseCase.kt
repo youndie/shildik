@@ -45,6 +45,10 @@ class IssueServiceTokenUseCase(
             // (protocol §2).
             if (!Secrets.matches(client.secretHash, Secrets.hash(params.clientSecret))) throw InvalidClient()
 
+            // After the secret, not before: which resources a client may name is not information
+            // somebody who failed to authenticate has any business learning.
+            val audience = Audiences.resolve(client, params.resources)
+
             val key = activeKey.forTenant(tenant.id)
             val now = clock.now()
             val expiresAt = now + TOKEN_TTL
@@ -62,7 +66,7 @@ class IssueServiceTokenUseCase(
                             JsonObject(
                                 mapOf("roles" to JsonArray(client.roles.sorted().map(::JsonPrimitive))),
                             ),
-                    ),
+                    ) + (Audiences.claim(audience)?.let { mapOf("aud" to it) } ?: emptyMap()),
                 )
 
             IssuedToken(
@@ -75,6 +79,8 @@ class IssueServiceTokenUseCase(
         val realm: String,
         val clientId: String,
         val clientSecret: String,
+        /** RFC 8707 `resource`, as many as were sent. Empty means "whatever this client is for". */
+        val resources: Set<String> = emptySet(),
     )
 
     companion object {

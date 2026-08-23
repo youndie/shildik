@@ -39,6 +39,7 @@ start, so that a pod restart does not leave anybody locked out.
 | `PUT` | `/admin/tenants/{tenant}/clients/{id}/import-secret` | accept a given secret (for a migration) |
 | `DELETE` | `/admin/tenants/{tenant}/clients/{id}` | delete a client |
 | `PUT` | `/admin/tenants/{tenant}/clients/{id}/roles` | replace a client's set of roles |
+| `PUT` | `/admin/tenants/{tenant}/clients/{id}/audiences` | replace which resources its tokens may be addressed to |
 | `GET` | `/admin/tenants/{tenant}/users` | list users |
 | `POST` | `/admin/tenants/{tenant}/users` | import a user, keeping their identifier |
 | `PUT` | `/admin/tenants/{tenant}/users/{id}/password` | set a password |

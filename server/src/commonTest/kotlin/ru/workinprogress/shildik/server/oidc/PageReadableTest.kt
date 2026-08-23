@@ -29,7 +29,12 @@ class PageReadableTest {
     @Test
     fun `an answer marked page-readable may be read by any origin, without credentials`() =
         testApplication {
-            routing { get("/document") { call.readableByAPage(); call.respondText("{}") } }
+            routing {
+                get("/document") {
+                    call.readableByAPage()
+                    call.respondText("{}")
+                }
+            }
 
             val response = client.get("/document")
 

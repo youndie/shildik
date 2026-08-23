@@ -37,10 +37,12 @@ shildik tenant list
 shildik tenant create <name> [--closed]
 
 shildik client list            [--tenant <t>]
-shildik client create <id>     [--tenant <t>] [--role <r>]... [--public] [--redirect-uri <u>]...
+shildik client create <id>     [--tenant <t>] [--role <r>]... [--public] [--redirect-uri <u>]... [--audience <r>]...
 shildik client rotate-secret <id>
 shildik client import-secret <id>          # the secret is read from stdin
 shildik client set-roles <id> --role <r>...
+shildik client audiences <id> --audience <r>...   # which resources its tokens may be addressed to
+
 shildik client delete <id>
 
 shildik user list              [--tenant <t>]

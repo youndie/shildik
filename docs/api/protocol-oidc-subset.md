@@ -56,7 +56,33 @@ The shape is dictated by validators that already existed:
 | `azp` | `client_id` | everyone: the first level of "who came" |
 | `realm_access.roles` | an array of strings | everyone: the second level |
 | `email` | user tokens only; absent from service tokens | services that tell a person from a program |
+| `aud` | the resources this token is addressed to; **absent** when the client has none | a resource server deciding whether the token was meant for it |
 | `exp`, `iat`, `jti` | standard | — |
+
+### `resource` — what a token is addressed to
+
+A token without `aud` is a token every service may be shown. That was every token this provider
+issued, and it is survivable exactly as long as all the services belong to the same people: the
+moment one of them is something a program talks to on somebody's behalf, a token taken from that
+program opens a person's screens as well, and neither service can tell it was not meant for them.
+
+So `resource` ([RFC 8707](https://www.rfc-editor.org/rfc/rfc8707)) is accepted at the token
+endpoint, may be repeated, and applies to all three grants:
+
+* a client may only name a resource it was **granted** — otherwise asking for an audience would be a
+  way to mint a token for a service the client has no business with, the reverse of what the claim
+  is for. A resource not on its list is refused with `invalid_target`, deliberately not
+  `invalid_client`: the client is who it says it is, and whoever configured it needs to see that the
+  list is missing an entry rather than that the secret is wrong;
+* naming **nothing** yields everything the client is entitled to;
+* a client entitled to nothing gets a token with no `aud` — which is what keeps every client
+  configured before this existed working unchanged.
+
+One resource is written as a string, several as an array. A single-element array is legal too and is
+not used: it is the form readers most often get wrong, and there is nothing to gain by finding out
+which ones.
+
+Which resources a client may name is part of the client ([feature-client-admin](../features/feature-client-admin.md)).
 
 The nesting of `realm_access.roles` is not a whim but what an existing validator parses out of
 `payload.getClaim("realm_access").asMap()["roles"]`.
