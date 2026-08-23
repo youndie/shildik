@@ -27,7 +27,7 @@ import kotlin.test.assertEquals
  */
 class PageReadableTest {
     @Test
-    fun `an answer marked page-readable may be read by any origin, without credentials`() =
+    fun `an answer marked page readable may be read by any origin and without credentials`() =
         testApplication {
             routing {
                 get("/document") {
