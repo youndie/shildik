@@ -45,6 +45,31 @@ configuration has to travel to git and be applied back with one command.
   audiences and scopes **separately** — a client whose several drifted used to have all but the
   first left as they were, with `apply` reporting success over an instance still unlike the file.
 
+## 2a. There is no dynamic client registration, on purpose
+
+[RFC 7591](https://www.rfc-editor.org/rfc/rfc7591) is not implemented and `registration_endpoint` is
+absent from discovery. A client that expects to register itself — the MCP specification assumes one
+will, and its clients do — refuses to connect and says so in those words. The answer is to create it
+here first, with its `redirect_uri`, and hand it the `client_id`.
+
+Two reasons, and the first is the one that decides.
+
+**Registration would not remove the administrator from the loop.** It hands a client an id. It does
+not hand it an audience or a scope, and here a token is worth nothing without both: a self-registered
+client would receive tokens with no `aud` and no `scope`, which every resource server that checks
+either refuses. The manual step does not disappear, it moves from "create a client" to "grant it what
+it needs" — and that is the half that is meant to require a person. Granting a program the right to
+act somewhere is not a decision to automate away.
+
+**A client that created itself lives only in the database.** It is not in the file in git, `apply` on
+an empty instance does not bring it back, and `plan` reports it as an extra to be removed. That is a
+hole in the property §1 calls the definition of done — the configuration travels to git and comes
+back with one command — and it is the property this whole surface exists for.
+
+If this is ever revisited, the shape that would not break the above: a per-tenant switch, loopback
+redirect addresses only, and clients born with no audiences and no scopes. That is registration as a
+way to skip the typing, not as a way to skip the granting.
+
 ## 3. How it works
 
 ```

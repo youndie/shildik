@@ -149,6 +149,11 @@ offers no protection, and a client picks from what is advertised.
 `userinfo_endpoint` must be there even if nothing calls it: `@auth/core` throws a `TypeError` on a
 discovery document without it — found in its code, not in the specification.
 
+`registration_endpoint` is **absent on purpose**: clients are created by an administrator, and the
+reasons are in [feature-client-admin §2a](../features/feature-client-admin.md). A client that expects
+to register itself will refuse to connect — that refusal is the documented behaviour here, not an
+unfinished edge.
+
 **A realm that does not exist is refused here**, with `404` and `unknown_realm`, rather than
 described. Every address in the document is built out of the issuer, so a document for a realm
 nobody created is shaped exactly like a real one; since this is the first request any client makes,
