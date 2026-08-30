@@ -257,7 +257,7 @@ class BrowserLoginTest {
             // Neither may be refused, and the chain has to stay alive: the second request used to
             // revoke the family together with the token just issued to the first.
             assertTrue(a != first && b != first, "both refreshes have to issue new tokens")
-            f.refresh(refreshParams(b!!)).getOrThrow()
+            f.refresh(refreshParams(b)).getOrThrow()
         }
 
     @Test

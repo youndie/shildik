@@ -63,7 +63,9 @@ internal object LoginPage {
             if (problem != Problem.EXPIRED) {
                 append("<form method=\"post\" action=\"").append(escape(actionPath)).append("\">")
                 append("<input type=\"hidden\" name=\"state\" value=\"").append(escape(state)).append("\">")
-                append("<label>Login<input type=\"text\" name=\"login\" autocomplete=\"username\" required autofocus></label>")
+                append(
+                    "<label>Login<input type=\"text\" name=\"login\" autocomplete=\"username\" required autofocus></label>",
+                )
                 append(
                     "<label>Password<input type=\"password\" name=\"password\" " +
                         "autocomplete=\"current-password\" required></label>",

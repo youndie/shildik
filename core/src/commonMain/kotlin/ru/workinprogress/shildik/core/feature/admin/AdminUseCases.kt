@@ -350,7 +350,8 @@ class RetireKeyUseCase(
                 // usually certain that they, at least, know what they are doing
                 // (feature-signing-keys §5).
                 throw IllegalStateException(
-                    "Key '${params.kid}' cannot be retired sooner than ${JWKS_CACHE_WINDOW.inWholeHours} h after rotation: " +
+                    "Key '${params.kid}' cannot be retired sooner than " +
+                        "${JWKS_CACHE_WINDOW.inWholeHours} h after rotation: " +
                         "clients cache JWKS for a day and would get a 401 on everything",
                 )
             }

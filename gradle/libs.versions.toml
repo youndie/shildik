@@ -1,4 +1,6 @@
 [versions]
+# The shared build conventions. One number: every sborka plugin below takes its version from here.
+sborka = "0.1.0.15"
 kotlin = "2.4.10"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
@@ -32,6 +34,10 @@ cryptography-provider-openssl3 = { module = "dev.whyoleg.cryptography:cryptograp
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 [plugins]
+sborkaKmp = { id = "ru.workinprogress.sborka.kmp", version.ref = "sborka" }
+sborkaJvm = { id = "ru.workinprogress.sborka.jvm", version.ref = "sborka" }
+sborkaLint = { id = "ru.workinprogress.sborka.lint", version.ref = "sborka" }
+sborkaPublish = { id = "ru.workinprogress.sborka.publish", version.ref = "sborka" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

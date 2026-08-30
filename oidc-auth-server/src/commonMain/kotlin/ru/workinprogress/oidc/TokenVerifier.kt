@@ -87,7 +87,8 @@ internal fun JsonObject.realmRoles(): Set<String> =
     }.getOrNull() ?: emptySet()
 
 /** `JsonNull` means the value is absent, not the string `"null"` it otherwise pretends to be. */
-internal fun JsonObject.text(name: String): String? = (this[name] as? JsonPrimitive)?.takeIf { it !is JsonNull }?.content
+internal fun JsonObject.text(name: String): String? =
+    (this[name] as? JsonPrimitive)?.takeIf { it !is JsonNull }?.content
 
 /**
  * Times are seconds since the epoch ([RFC 7519 §4.1.4](https://www.rfc-editor.org/rfc/rfc7519)).

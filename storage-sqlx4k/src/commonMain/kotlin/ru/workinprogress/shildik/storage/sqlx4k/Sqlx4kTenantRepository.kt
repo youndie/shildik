@@ -30,7 +30,8 @@ class Sqlx4kTenantRepository(
             .firstOrNull()
             ?.let(::toTenant)
 
-    override suspend fun list(): List<Tenant> = db.query(sql("select id, realm, registration_open from tenants")).map(::toTenant)
+    override suspend fun list(): List<Tenant> =
+        db.query(sql("select id, realm, registration_open from tenants")).map(::toTenant)
 
     override suspend fun create(tenant: Tenant): Tenant {
         db.exec(

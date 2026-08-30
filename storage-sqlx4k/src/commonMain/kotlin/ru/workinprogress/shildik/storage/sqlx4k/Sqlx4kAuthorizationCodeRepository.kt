@@ -13,7 +13,8 @@ class Sqlx4kAuthorizationCodeRepository(
         db.exec(
             sql(
                 "insert into authorization_codes " +
-                    "(tenant_id, code_hash, client_id, user_id, redirect_uri, code_challenge, scope, nonce, expires_at, used) " +
+                    "(tenant_id, code_hash, client_id, user_id, redirect_uri, code_challenge, " +
+                    "scope, nonce, expires_at, used) " +
                     "values (:tenant, :hash, :client, :user, :redirect, :challenge, :scope, :nonce, :expires, :used)",
             ).bind("tenant", code.tenantId.value)
                 .bind("hash", code.codeHash)
@@ -63,8 +64,9 @@ class Sqlx4kAuthorizationCodeRepository(
         codeHash: String,
     ): Boolean =
         db.exec(
-            sql("update authorization_codes set used = true where tenant_id = :tenant and code_hash = :hash and used = false")
-                .bind("tenant", tenantId.value)
+            sql(
+                "update authorization_codes set used = true where tenant_id = :tenant and code_hash = :hash and used = false",
+            ).bind("tenant", tenantId.value)
                 .bind("hash", codeHash),
         ) > 0
 }

@@ -42,7 +42,9 @@ class MagicLinkAuthMethodTest {
         runTest {
             // Thirty seconds is what the sender allows for the redirect: longer means the link
             // was forwarded or opened later.
-            assertNull(method(epochSeconds = 1785000031).authenticate(request(MagicLinkAuthMethod.TOKEN_PARAM to token)))
+            assertNull(
+                method(epochSeconds = 1785000031).authenticate(request(MagicLinkAuthMethod.TOKEN_PARAM to token)),
+            )
         }
 
     @Test

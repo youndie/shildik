@@ -33,11 +33,13 @@ class KeycloakSourceTest {
                 MockEngine { request ->
                     val path = request.url.encodedPath
                     when {
-                        path.endsWith("/token") ->
+                        path.endsWith("/token") -> {
                             respond("""{"access_token":"t"}""", HttpStatusCode.OK, json)
+                        }
 
-                        path.endsWith("/federated-identity") ->
+                        path.endsWith("/federated-identity") -> {
                             respond("""[{"identityProvider":"google","userId":"g-1"}]""", HttpStatusCode.OK, json)
+                        }
 
                         else -> {
                             val first = request.url.parameters["first"]
@@ -91,17 +93,24 @@ class KeycloakSourceTest {
 
             // An empty list would mean "nobody to import" — the quietest way to lose everyone.
             assertTrue(failure is AdminApiException, "expected an error, got: $failure")
-            assertEquals(403, (failure as AdminApiException).status)
+            assertEquals(403, failure.status)
         }
 
     private fun singleUserEngine() =
         MockEngine { request ->
             val path = request.url.encodedPath
             when {
-                path.endsWith("/token") -> respond("""{"access_token":"t"}""", HttpStatusCode.OK, json)
-                path.endsWith("/federated-identity") ->
+                path.endsWith("/token") -> {
+                    respond("""{"access_token":"t"}""", HttpStatusCode.OK, json)
+                }
+
+                path.endsWith("/federated-identity") -> {
                     respond("""[{"identityProvider":"google","userId":"g-1"}]""", HttpStatusCode.OK, json)
-                else -> respond("[${user("u1")}]", HttpStatusCode.OK, json)
+                }
+
+                else -> {
+                    respond("[${user("u1")}]", HttpStatusCode.OK, json)
+                }
             }
         }
 

@@ -13,6 +13,11 @@ private val prettyJson =
         encodeDefaults = true
     }
 
+// One instance rather than one per call. The compiler says so — "redundant creation of Json format,
+// creating instances for each usage can be slow" — and building a format means building its
+// serializers module every time.
+private val lenientJson = Json { ignoreUnknownKeys = true }
+
 class Export : ApiCommand("export") {
     private val file by option("-f", "--file", help = "Where to write; stdout by default")
 
@@ -111,7 +116,8 @@ sealed interface Change {
         val realm: String,
         val clientId: String,
     ) : Change {
-        override val summary get() = "! the instance has an extra client $clientId ($realm) — the file does not describe it"
+        override val summary get() =
+            "! the instance has an extra client $clientId ($realm) — the file does not describe it"
     }
 }
 
@@ -170,7 +176,8 @@ suspend fun planChanges(
             // both drifted used to have the second difference hidden by the first, and `apply`
             // would then leave the instance still unlike the file while reporting success.
             if (current.roles.toSet() != client.roles.toSet()) {
-                changes += Change.UpdateRoles(tenant.realm, client.clientId, current.roles.sorted(), client.roles.sorted())
+                changes +=
+                    Change.UpdateRoles(tenant.realm, client.clientId, current.roles.sorted(), client.roles.sorted())
             }
             if (current.audiences.toSet() != client.audiences.toSet()) {
                 changes +=
@@ -199,8 +206,7 @@ suspend fun planChanges(
     return changes
 }
 
-fun readConfig(path: String): ExportedConfig =
-    Json { ignoreUnknownKeys = true }.decodeFromString(ExportedConfig.serializer(), readFile(path))
+fun readConfig(path: String): ExportedConfig = lenientJson.decodeFromString(ExportedConfig.serializer(), readFile(path))
 
 /**
  * Show what `apply` would do, changing nothing.
@@ -249,7 +255,7 @@ class Apply : ApiCommand("apply") {
 
     override fun run() =
         run { api ->
-            val config = Json { ignoreUnknownKeys = true }.decodeFromString(ExportedConfig.serializer(), readFile(file))
+            val config = lenientJson.decodeFromString(ExportedConfig.serializer(), readFile(file))
 
             val existingRealms =
                 api.listTenants().map { it.realm }.toSet()

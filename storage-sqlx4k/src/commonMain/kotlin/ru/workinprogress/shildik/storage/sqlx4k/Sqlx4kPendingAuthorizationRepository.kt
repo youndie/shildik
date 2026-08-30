@@ -14,7 +14,8 @@ class Sqlx4kPendingAuthorizationRepository(
         db.exec(
             sql(
                 "insert into pending_authorizations " +
-                    "(tenant_id, state, client_id, redirect_uri, scope, client_state, nonce, code_challenge, method_id, expires_at) " +
+                    "(tenant_id, state, client_id, redirect_uri, scope, client_state, nonce, " +
+                    "code_challenge, method_id, expires_at) " +
                     "values (:tenant, :state, :client, :redirect, :scope, :clientState, :nonce, :challenge, :method, :expires)",
             ).bind("tenant", pending.tenantId.value)
                 .bind("state", pending.state)

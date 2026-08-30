@@ -106,8 +106,12 @@ class ProvideClientTest {
                     respond("ok")
                 }
 
-            provideClient(auth, config, endpoint = "orders-api.orders.svc.cluster.local:8080/internal", engine = neighbour)
-                .request("/items")
+            provideClient(
+                auth,
+                config,
+                endpoint = "orders-api.orders.svc.cluster.local:8080/internal",
+                engine = neighbour,
+            ).request("/items")
 
             // Deployments are configured this way: the port and the path prefix live inside the
             // "host". It looks odd, it is what works in production, and this test holds it there.

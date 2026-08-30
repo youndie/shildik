@@ -33,13 +33,20 @@ class SetPasswordTest {
         runTest {
             val credentials = FakeCredentials()
             val useCase =
-                SetPasswordUseCase(FakeTenants(listOf(Tenant(tenantId, realm))), FakeUsers(mutableListOf(known())), credentials)
+                SetPasswordUseCase(
+                    FakeTenants(listOf(Tenant(tenantId, realm))),
+                    FakeUsers(mutableListOf(known())),
+                    credentials,
+                )
 
             useCase(SetPasswordUseCase.Params(realm, "operator", "long-enough-secret")).getOrThrow()
 
             val stored = credentials.find(tenantId, "operator")
-            assertTrue(stored != null && stored.startsWith("pbkdf2-sha512\$"), "the password has to be stored hashed: $stored")
-            assertTrue(Passwords.verify("long-enough-secret", stored!!))
+            assertTrue(
+                stored != null && stored.startsWith("pbkdf2-sha512\$"),
+                "the password has to be stored hashed: $stored",
+            )
+            assertTrue(Passwords.verify("long-enough-secret", stored))
         }
 
     @Test
@@ -47,7 +54,11 @@ class SetPasswordTest {
         runTest {
             val credentials = FakeCredentials()
             val useCase =
-                SetPasswordUseCase(FakeTenants(listOf(Tenant(tenantId, realm))), FakeUsers(mutableListOf(known())), credentials)
+                SetPasswordUseCase(
+                    FakeTenants(listOf(Tenant(tenantId, realm))),
+                    FakeUsers(mutableListOf(known())),
+                    credentials,
+                )
 
             val result = useCase(SetPasswordUseCase.Params(realm, "operator", "short"))
 
