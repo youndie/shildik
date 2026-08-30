@@ -16,21 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v5
+      # Java, Gradle and the ~/.konan cache in one step. That cache is not an optimisation to
+      # taste: the Kotlin/Native toolchain is around a gigabyte and is a fresh download on every
+      # cold runner without it.
+      - uses: youndie/sborka/.github/actions/setup-kotlin@main
         with:
-          distribution: temurin
-          java-version: '25'
+          konan-cache: "true"
 
-      - uses: gradle/actions/setup-gradle@v6
-
-      # The Kotlin/Native toolchain is a few hundred megabytes and does not change between runs.
-      # Without this cache every build downloads it again, which costs more than the build itself.
-      - name: Cache Kotlin/Native toolchain
-        uses: actions/cache@v6
-        with:
-          path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
-          restore-keys: konan-${{ runner.os }}-
 
       # Linux targets rather than the macOS one: the runner is Linux, and cross-compiling to Apple
       # targets is not possible here. What this proves is that the common code works away from the

@@ -394,11 +394,17 @@ class ExchangeCodeUseCase(
             // would otherwise reveal which code exists.
             if (stored.used) throw OAuthRejection("invalid_grant", "the code was already used")
             if (stored.expiresAt <= Clock.System.now()) throw OAuthRejection("invalid_grant", "the code expired")
-            if (stored.clientId != client.clientId) throw OAuthRejection("invalid_grant", "the code was issued to another client")
+            if (stored.clientId !=
+                client.clientId
+            ) {
+                throw OAuthRejection("invalid_grant", "the code was issued to another client")
+            }
             if (stored.redirectUri != params.redirectUri) {
                 throw OAuthRejection("invalid_grant", "redirect_uri differs from the one the code was issued for")
             }
-            if (stored.codeChallenge.isNotBlank() && !Pkce.matches(stored.codeChallenge, params.codeVerifier.orEmpty())) {
+            if (stored.codeChallenge.isNotBlank() &&
+                !Pkce.matches(stored.codeChallenge, params.codeVerifier.orEmpty())
+            ) {
                 throw OAuthRejection("invalid_grant", "code_verifier does not match")
             }
 
@@ -509,7 +515,11 @@ class RefreshTokensUseCase(
                 refreshTokens.revokeFamily(tenant.id, stored.family)
                 throw OAuthRejection("invalid_grant", "the token was presented twice")
             }
-            if (stored.clientId != client.clientId) throw OAuthRejection("invalid_grant", "the token was issued to another client")
+            if (stored.clientId !=
+                client.clientId
+            ) {
+                throw OAuthRejection("invalid_grant", "the token was issued to another client")
+            }
             if (stored.expiresAt <= clock.now()) throw OAuthRejection("invalid_grant", "the token expired")
 
             transactions.withTransaction {

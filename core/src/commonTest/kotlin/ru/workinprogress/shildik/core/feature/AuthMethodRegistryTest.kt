@@ -19,7 +19,11 @@ class AuthMethodRegistryTest {
         override val id: String,
         private val subject: AuthenticatedSubject?,
     ) : AuthMethod {
-        override suspend fun authenticate(request: AuthRequest): AuthenticatedSubject? = subject.takeIf { request["token"] == "right" }
+        override suspend fun authenticate(request: AuthRequest): AuthenticatedSubject? =
+            subject.takeIf {
+                request["token"] ==
+                    "right"
+            }
     }
 
     @Test

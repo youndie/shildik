@@ -30,15 +30,17 @@ class GoogleAuthMethodTest {
     private fun happyEngine() =
         MockEngine { request ->
             when {
-                request.url.encodedPath.endsWith("/token") ->
+                request.url.encodedPath.endsWith("/token") -> {
                     respond("""{"access_token":"at-1"}""", HttpStatusCode.OK, json)
+                }
 
-                else ->
+                else -> {
                     respond(
                         """{"sub":"117000","email":"owner@example.com","name":"Owner"}""",
                         HttpStatusCode.OK,
                         json,
                     )
+                }
             }
         }
 

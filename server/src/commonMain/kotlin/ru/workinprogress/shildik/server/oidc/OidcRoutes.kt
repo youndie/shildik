@@ -50,14 +50,13 @@ import ru.workinprogress.shildik.shared.OAuth2
 import ru.workinprogress.shildik.shared.OAuthError
 import ru.workinprogress.shildik.shared.RealmResource
 import ru.workinprogress.shildik.shared.TokenResponse
+import kotlin.io.encoding.Base64
 
-/**
- * The public OIDC contour.
- *
- * URLs are not spelled out here as strings — they arrive from `:shared` as types
- * (`RealmResource`), and the client uses the same description. The shape of a URL used to live in
- * two places and could drift apart silently.
- */
+// The public OIDC contour.
+//
+// URLs are not spelled out here as strings — they arrive from `:shared` as types
+// (`RealmResource`), and the client uses the same description. The shape of a URL used to live in
+// two places and could drift apart silently.
 fun Application.oidcRoutes(koin: Koin) {
     val issueToken = koin.get<IssueServiceTokenUseCase>()
     val authorize = koin.get<AuthorizeUseCase>()
@@ -101,7 +100,9 @@ fun Application.oidcRoutes(koin: Koin) {
         val credentials = clientCredentials(call, form)
 
         when (form["grant_type"]) {
-            "client_credentials" -> Unit
+            "client_credentials" -> {
+                // Nothing: this grant needs no extra parameter check.
+            }
 
             "authorization_code" -> {
                 exchangeCode(realm, form, credentials.clientId, reporter, exchange, tenants, issueUserTokens)
@@ -204,7 +205,9 @@ fun Application.oidcRoutes(koin: Koin) {
             onSuccess = { issued ->
                 val separator = if ('?' in issued.redirectUri) '&' else '?'
                 val state = issued.state?.let { "&state=" + it.encodeURLParameter() }.orEmpty()
-                call.respondRedirect("${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + state)
+                call.respondRedirect(
+                    "${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + state,
+                )
             },
             onFailure = { error -> call.respondFailure(error, reporter) },
         )
@@ -231,7 +234,9 @@ fun Application.oidcRoutes(koin: Koin) {
             onSuccess = { issued ->
                 val separator = if ('?' in issued.redirectUri) '&' else '?'
                 val state = issued.state?.let { "&state=" + it.encodeURLParameter() }.orEmpty()
-                call.respondRedirect("${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + state)
+                call.respondRedirect(
+                    "${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + state,
+                )
             },
             onFailure = { error -> call.respondFailure(error, reporter) },
         )
@@ -267,33 +272,37 @@ fun Application.oidcRoutes(koin: Koin) {
                         val separator = if ('?' in issued.redirectUri) '&' else '?'
                         val clientState = issued.state?.let { "&state=" + it.encodeURLParameter() }.orEmpty()
                         call.respondRedirect(
-                            "${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + clientState,
+                            "${issued.redirectUri}$separator" + "code=" +
+                                issued.code.encodeURLParameter() + clientState,
                         )
                     }
 
-                    LoginOutcome.Wrong ->
+                    LoginOutcome.Wrong -> {
                         call.respondLoginPage(
                             loginPath(realm, method),
                             state,
                             LoginPage.Problem.WRONG,
                             HttpStatusCode.Unauthorized,
                         )
+                    }
 
-                    LoginOutcome.Locked ->
+                    LoginOutcome.Locked -> {
                         call.respondLoginPage(
                             loginPath(realm, method),
                             state,
                             LoginPage.Problem.LOCKED,
                             HttpStatusCode.TooManyRequests,
                         )
+                    }
 
-                    LoginOutcome.Expired ->
+                    LoginOutcome.Expired -> {
                         call.respondLoginPage(
                             loginPath(realm, method),
                             state,
                             LoginPage.Problem.EXPIRED,
                             HttpStatusCode.BadRequest,
                         )
+                    }
                 }
             },
             onFailure = { error -> call.respondFailure(error, reporter) },
@@ -350,17 +359,15 @@ fun Application.oidcRoutes(koin: Koin) {
         options<RealmResource.OpenIdConnect.Token> { call.answerPreflight() }
         options<OAuth2.Token> { call.answerPreflight() }
 
-        /**
-         * The start of a browser sign-in.
-         *
-         * The answer is a redirect carrying the code to the client's `redirect_uri`. Errors are
-         * **not** redirected: at this step the address is not confirmed yet, and sending anything
-         * to it would be exactly what checking the list protects against.
-         */
+        // The start of a browser sign-in.
+        //
+        // The answer is a redirect carrying the code to the client's `redirect_uri`. Errors are
+        // **not** redirected: at this step the address is not confirmed yet, and sending anything
+        // to it would be exactly what checking the list protects against.
         get<RealmResource.OpenIdConnect.Auth> { startAuthorization(it.parent.parent.realm) }
         get<OAuth2.Authorize> { startAuthorization(it.parent.realm) }
 
-        /** The return from an external provider. */
+        // The return from an external provider.
         get<RealmResource.OpenIdConnect.Auth.Callback> { completeCallback(it.parent.parent.parent.realm, it.method) }
         get<OAuth2.Callback> { completeCallback(it.parent.realm, it.method) }
 
@@ -432,12 +439,10 @@ fun Application.oidcRoutes(koin: Koin) {
     }
 }
 
-/**
- * Exchanging a code for tokens.
- *
- * Pulled out of the route because there are more steps here than in the others: check the code,
- * find the tenant, sign two tokens.
- */
+// Exchanging a code for tokens.
+//
+// Pulled out of the route because there are more steps here than in the others: check the code,
+// find the tenant, sign two tokens.
 private suspend fun io.ktor.server.routing.RoutingContext.exchangeCode(
     realm: String,
     form: io.ktor.http.Parameters,
@@ -487,10 +492,8 @@ private suspend fun io.ktor.server.routing.RoutingContext.exchangeCode(
     )
 }
 
-/**
- * Refreshing tokens. Rotating: the answer carries a **new** refresh token, the previous one is
- * already spent.
- */
+// Refreshing tokens. Rotating: the answer carries a **new** refresh token, the previous one is
+// already spent.
 private suspend fun io.ktor.server.routing.RoutingContext.refreshSession(
     realm: String,
     form: io.ktor.http.Parameters,
@@ -538,17 +541,15 @@ private suspend fun io.ktor.server.routing.RoutingContext.refreshSession(
     )
 }
 
-/**
- * Which sign-in method to use when the client did not say.
- *
- * When the build has exactly **one** method there is nothing to ask about, and that is a necessity
- * rather than a convenience: `oauth2-proxy` does not send an `auth_method` parameter and cannot be
- * taught to. The internal build knows exactly one method, and used to run into a hardcoded
- * `google` that is not part of it.
- *
- * When there are several, the choice belongs to the client: guessing on its behalf means one day
- * taking a person somewhere they did not intend to go.
- */
+// Which sign-in method to use when the client did not say.
+//
+// When the build has exactly **one** method there is nothing to ask about, and that is a necessity
+// rather than a convenience: `oauth2-proxy` does not send an `auth_method` parameter and cannot be
+// taught to. The internal build knows exactly one method, and used to run into a hardcoded
+// `google` that is not part of it.
+//
+// When there are several, the choice belongs to the client: guessing on its behalf means one day
+// taking a person somewhere they did not intend to go.
 private fun AuthMethodRegistry.defaultId(): String = ids().singleOrNull() ?: FALLBACK_AUTH_METHOD
 
 /** The product build knows two methods, and Google is the one owners sign in with. */
@@ -558,13 +559,11 @@ private const val FALLBACK_AUTH_METHOD = "google"
 @Resource("/assets/pico.classless.min.css")
 private class StylesheetResource
 
-/**
- * The single answer to a failure in the OIDC contour.
- *
- * Every route used to write `(error as? OAuthRejection)?.error ?: "server_error"` itself, and that
- * "?:" hid the whole difference between "the client sent nonsense" and "our database is down". Now
- * [OAuthFailure] tells them apart, and what is ours gets reported.
- */
+// The single answer to a failure in the OIDC contour.
+//
+// Every route used to write `(error as? OAuthRejection)?.error ?: "server_error"` itself, and that
+// "?:" hid the whole difference between "the client sent nonsense" and "our database is down". Now
+// [OAuthFailure] tells them apart, and what is ours gets reported.
 private suspend fun ApplicationCall.respondFailure(
     error: Throwable,
     reporter: ErrorReporter,
@@ -579,10 +578,8 @@ private suspend fun ApplicationCall.respondFailure(
     respond(failure.status, OAuthError(code))
 }
 
-/**
- * Where the sign-in form posts the password. Still the old URL for now: it is served, and moving
- * the form to the new one is a one-line edit better done together with the rest than on its own.
- */
+// Where the sign-in form posts the password. Still the old URL for now: it is served, and moving
+// the form to the new one is a one-line edit better done together with the rest than on its own.
 private fun loginPath(
     realm: String,
     methodId: String,
@@ -600,12 +597,10 @@ private suspend fun ApplicationCall.respondLoginPage(
     respondText(LoginPage.html(actionPath, state, problem), ContentType.Text.Html, status)
 }
 
-/**
- * Whether the request came from our own page.
- *
- * The browser sets `Origin` on every form POST, and a page cannot forge it. A missing header counts
- * as foreign: browsers do send it, and a non-browser has no use for our form.
- */
+// Whether the request came from our own page.
+//
+// The browser sets `Origin` on every form POST, and a page cannot forge it. A missing header counts
+// as foreign: browsers do send it, and a non-browser has no use for our form.
 private fun ApplicationCall.sameOrigin(
     issuers: IssuerResolver,
     realm: String,
@@ -615,29 +610,25 @@ private fun ApplicationCall.sameOrigin(
     return origin == expected
 }
 
-/**
- * The return address from an external provider — **deliberately the old one**, inherited from
- * Keycloak.
- *
- * M-84 introduced our own URLs (`oauth2/callback/{method}`), and the temptation to move this one
- * along with them is understandable. But this address is registered **in the Google console**:
- * allowed redirect_uris are listed there by name, and Google rejects a request with an
- * unregistered one — meaning an owner's sign-in breaks not in our test but in their browser.
- *
- * The order of the move: first the new address is added to the Google console (the old one stays),
- * then this line changes. Not the other way round.
- */
+// The return address from an external provider — **deliberately the old one**, inherited from
+// Keycloak.
+//
+// M-84 introduced our own URLs (`oauth2/callback/{method}`), and the temptation to move this one
+// along with them is understandable. But this address is registered **in the Google console**:
+// allowed redirect_uris are listed there by name, and Google rejects a request with an
+// unregistered one — meaning an owner's sign-in breaks not in our test but in their browser.
+//
+// The order of the move: first the new address is added to the Google console (the old one stays),
+// then this line changes. Not the other way round.
 private fun callbackUri(
     issuers: IssuerResolver,
     realm: String,
     methodId: String,
 ) = "${issuers.issuerFor(realm)}/protocol/openid-connect/auth/$methodId/callback"
 
-/**
- * The name of the parameter that carries the return address to a sign-in method. It lives here
- * rather than in the Google module: shared code has to be able to tell the address to any
- * redirecting method.
- */
+// The name of the parameter that carries the return address to a sign-in method. It lives here
+// rather than in the Google module: shared code has to be able to tell the address to any
+// redirecting method.
 private const val CALLBACK_URI_PARAM = "shildik_callback_uri"
 
 /** Who presented themselves at the token endpoint. */
@@ -646,16 +637,14 @@ private class ClientCredentials(
     val clientSecret: String,
 )
 
-/**
- * A client is recognised **both from the body and from the** `Authorization: Basic` **header**.
- *
- * RFC 6749 §2.3.1 allows both, and the client picks, not us. `@auth/core` sends `Basic` — and the
- * very first live sign-in attempt ran into `invalid_client`, because the body had no `client_id`
- * at all. In the log it looked like a lookup for a client with an empty identifier.
- *
- * Values inside `Basic` are additionally URL-encoded — the same section requires it, and without
- * decoding, identifiers with special characters would break.
- */
+// A client is recognised **both from the body and from the** `Authorization: Basic` **header**.
+//
+// RFC 6749 §2.3.1 allows both, and the client picks, not us. `@auth/core` sends `Basic` — and the
+// very first live sign-in attempt ran into `invalid_client`, because the body had no `client_id`
+// at all. In the log it looked like a lookup for a client with an empty identifier.
+//
+// Values inside `Basic` are additionally URL-encoded — the same section requires it, and without
+// decoding, identifiers with special characters would break.
 private fun clientCredentials(
     call: ApplicationCall,
     form: io.ktor.http.Parameters,
@@ -667,7 +656,11 @@ private fun clientCredentials(
     if (!header.startsWith("Basic ")) return ClientCredentials("", "")
 
     val decoded =
-        runCatching { header.removePrefix("Basic ").trim().decodeBase64String() }.getOrNull()
+        runCatching {
+            Base64.Default
+                .decode(header.removePrefix("Basic ").trim())
+                .decodeToString()
+        }.getOrNull()
             ?: return ClientCredentials("", "")
 
     val separator = decoded.indexOf(':')

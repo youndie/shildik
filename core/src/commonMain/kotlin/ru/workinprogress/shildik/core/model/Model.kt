@@ -217,7 +217,8 @@ data class SigningKeyRecord(
 ) {
     // A ByteArray in a data class breaks equals/hashCode — we compare by kid, which is the
     // identity anyway.
-    override fun equals(other: Any?): Boolean = other is SigningKeyRecord && other.kid == kid && other.tenantId == tenantId
+    override fun equals(other: Any?): Boolean =
+        other is SigningKeyRecord && other.kid == kid && other.tenantId == tenantId
 
     override fun hashCode(): Int = 31 * tenantId.hashCode() + kid.hashCode()
 }

@@ -4,7 +4,19 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        // Written out by hand, and it has to be: `pluginManagement` is evaluated before any settings
+        // plugin is applied — including the sborka one, which is fetched through it.
+        maven("https://reposilite.kotlin.website/snapshots") {
+            name = "wip-snapshots"
+            content { includeGroupByRegex("ru\\.workinprogress.*") }
+        }
     }
+}
+
+plugins {
+    // mavenCentral() and google() with their content filters, the shared `wip` catalog, and the
+    // check that this repository's `.editorconfig` is the one the rest of them use.
+    id("ru.workinprogress.sborka.settings") version "0.1.0.15"
 }
 
 dependencyResolutionManagement {
@@ -12,9 +24,6 @@ dependencyResolutionManagement {
         create("ktorLibs") {
             from("io.ktor:ktor-version-catalog:3.5.2")
         }
-    }
-    repositories {
-        mavenCentral()
     }
 }
 

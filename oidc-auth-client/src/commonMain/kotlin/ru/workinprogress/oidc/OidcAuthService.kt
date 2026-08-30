@@ -106,7 +106,8 @@ class OidcAuthService(
         }
 }
 
-private fun OidcConfig.tokenResource() = RealmResource.OpenIdConnect.Token(RealmResource.OpenIdConnect(RealmResource(realm)))
+private fun OidcConfig.tokenResource() =
+    RealmResource.OpenIdConnect.Token(RealmResource.OpenIdConnect(RealmResource(realm)))
 
 private fun OidcConfig.discoveryResource() = RealmResource.Discovery(RealmResource(realm))
 

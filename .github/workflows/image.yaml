@@ -28,20 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v5
+      # Java, Gradle and the ~/.konan cache in one step. That cache is not an optimisation to
+      # taste: the Kotlin/Native toolchain is around a gigabyte and is a fresh download on every
+      # cold runner without it.
+      - uses: youndie/sborka/.github/actions/setup-kotlin@main
         with:
-          distribution: temurin
-          java-version: '25'
+          konan-cache: "true"
 
-      - uses: gradle/actions/setup-gradle@v6
-
-      # The Kotlin/Native toolchain is a few hundred megabytes and does not change between runs.
-      - name: Cache Kotlin/Native toolchain
-        uses: actions/cache@v6
-        with:
-          path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
-          restore-keys: konan-${{ runner.os }}-
 
       # **The commit tag is the one that is always right.** A run number of this workflow would
       # look like a version and mean nothing: the libraries inside carry `0.2.0.<publish run>`, and

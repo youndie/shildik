@@ -88,7 +88,12 @@ class TenantCreate : ApiCommand("create") {
     override fun run() =
         run { api ->
             val tenant = api.createTenant(realm, registrationOpen = !closed)
-            out.record(listOf("realm" to tenant.realm, "registration" to if (tenant.registrationOpen) "open" else "closed"))
+            out.record(
+                listOf(
+                    "realm" to tenant.realm,
+                    "registration" to if (tenant.registrationOpen) "open" else "closed",
+                ),
+            )
         }
 }
 
@@ -112,7 +117,10 @@ class ClientList : ApiCommand("list") {
 
 class ClientAudiences : ApiCommand("audiences") {
     private val clientId by argument("clientId")
-    private val audiences by option("--audience", help = "Resource this client may hold a token for, repeatable").multiple()
+    private val audiences by option(
+        "--audience",
+        help = "Resource this client may hold a token for, repeatable",
+    ).multiple()
 
     override fun run() =
         run { api ->
@@ -159,7 +167,10 @@ class ClientCreate : ApiCommand("create") {
      * Which resources this client may hold a token for (RFC 8707). Without one its tokens carry no
      * `aud`, and a service that checks the audience will refuse them.
      */
-    private val audiences by option("--audience", help = "Resource this client may hold a token for, repeatable").multiple()
+    private val audiences by option(
+        "--audience",
+        help = "Resource this client may hold a token for, repeatable",
+    ).multiple()
 
     /**
      * What its tokens may permit where they are spent. Without one they carry no `scope`, and a
@@ -209,9 +220,11 @@ class ClientImportSecret : ApiCommand("import-secret") {
 
     override fun run() =
         run { api ->
-            val secret = readLine()?.trim().orEmpty()
+            val secret = readlnOrNull()?.trim().orEmpty()
             if (secret.isEmpty()) {
-                out.message("The secret is read from stdin: echo -n '<secret>' | shildik client import-secret <clientId>")
+                out.message(
+                    "The secret is read from stdin: echo -n '<secret>' | shildik client import-secret <clientId>",
+                )
                 throw CliktError()
             }
             val updated = api.importSecret(tenant, clientId, secret)
@@ -231,9 +244,11 @@ class UserSetPassword : ApiCommand("set-password") {
 
     override fun run() =
         run { api ->
-            val password = readLine()?.trim().orEmpty()
+            val password = readlnOrNull()?.trim().orEmpty()
             if (password.isEmpty()) {
-                out.message("The password is read from stdin: echo -n '<password>' | shildik user set-password <userId>")
+                out.message(
+                    "The password is read from stdin: echo -n '<password>' | shildik user set-password <userId>",
+                )
                 throw CliktError()
             }
             api.setPassword(tenant, userId, password)
@@ -269,7 +284,10 @@ class UserImport : ApiCommand("import") {
         .required()
     private val keycloakRealm by option("--from-realm", envvar = "KEYCLOAK_REALM", help = "Previous provider realm")
     private val keycloakClientId by option("--from-client", envvar = "KEYCLOAK_CLIENT_ID").default("billing")
-    private val keycloakSecret by option(envvar = "KEYCLOAK_CLIENT_SECRET", help = "From the environment only").required()
+    private val keycloakSecret by option(
+        envvar = "KEYCLOAK_CLIENT_SECRET",
+        help = "From the environment only",
+    ).required()
 
     override fun run() =
         run { api ->

@@ -33,7 +33,11 @@ class AudiencesTest {
 
     @Test
     fun `a client gets what it asked for when it was granted it`() {
-        val resolved = Audiences.resolve(client("https://a.example/", "https://b.example/mcp"), setOf("https://b.example/mcp"))
+        val resolved =
+            Audiences.resolve(
+                client("https://a.example/", "https://b.example/mcp"),
+                setOf("https://b.example/mcp"),
+            )
 
         assertEquals(setOf("https://b.example/mcp"), resolved)
     }

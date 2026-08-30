@@ -211,7 +211,14 @@ private fun Route.userRoutes(koin: Koin) {
                     name = user.name,
                     emailVerified = user.emailVerified,
                     enabled = user.enabled,
-                    identities = user.identities.map { ExternalIdentityView(it.provider, it.subject) }.sortedBy { it.provider },
+                    identities =
+                        user.identities
+                            .map {
+                                ExternalIdentityView(
+                                    it.provider,
+                                    it.subject,
+                                )
+                            }.sortedBy { it.provider },
                 )
             }
         }
@@ -301,14 +308,26 @@ private suspend inline fun <T, reified R : Any> Result<T>.respondWith(
         },
         onFailure = { error ->
             when (error) {
-                is NotFound -> call.respond(HttpStatusCode.NotFound, ErrorView(error.message.orEmpty()))
-                is AlreadyExists -> call.respond(HttpStatusCode.Conflict, ErrorView(error.message.orEmpty()))
-                is IllegalStateException ->
+                is NotFound -> {
+                    call.respond(HttpStatusCode.NotFound, ErrorView(error.message.orEmpty()))
+                }
+
+                is AlreadyExists -> {
+                    call.respond(HttpStatusCode.Conflict, ErrorView(error.message.orEmpty()))
+                }
+
+                is IllegalStateException -> {
                     call.respond(HttpStatusCode.UnprocessableEntity, ErrorView(error.message.orEmpty()))
+                }
+
                 // `require(...)` in the domain means "the request is no good", not "the state is".
-                is IllegalArgumentException ->
+                is IllegalArgumentException -> {
                     call.respond(HttpStatusCode.BadRequest, ErrorView(error.message.orEmpty()))
-                else -> throw error
+                }
+
+                else -> {
+                    throw error
+                }
             }
         },
     )

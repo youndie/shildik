@@ -75,5 +75,11 @@ fun domainModule(): Module =
         singleOf(::ListKeysUseCase)
         singleOf(::ReencryptKeysUseCase)
 
-        single { AdminAccess(get<ru.workinprogress.shildik.core.config.ShildikConfig>().effectiveBootstrapToken, get(), get()) }
+        single {
+            AdminAccess(
+                get<ru.workinprogress.shildik.core.config.ShildikConfig>().effectiveBootstrapToken,
+                get(),
+                get(),
+            )
+        }
     }

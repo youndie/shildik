@@ -50,6 +50,9 @@ class OidcResourcesTest {
      */
     @Test
     fun `discovery stays under the issuer`() {
-        assertEquals("/realms/main/.well-known/openid-configuration", path(RealmResource.Discovery(RealmResource("main"))))
+        assertEquals(
+            "/realms/main/.well-known/openid-configuration",
+            path(RealmResource.Discovery(RealmResource("main"))),
+        )
     }
 }

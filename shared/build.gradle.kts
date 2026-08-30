@@ -1,12 +1,13 @@
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinSerialization)
+    id("org.jetbrains.kotlin.multiplatform")
+    id("ru.workinprogress.sborka.kmp")
+    id("ru.workinprogress.sborka.lint")
+    id("ru.workinprogress.sborka.publish")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-/**
- * The wire of the admin API: URLs and models for the server and the CLI. The OIDC contour lives
- * apart (`:shared-oidc`) — its description travels to external clients, this one stays inside.
- */
+// The wire of the admin API: URLs and models for the server and the CLI. The OIDC contour lives
+// apart (`:shared-oidc`) — its description travels to external clients, this one stays inside.
 kotlin {
     jvm()
     macosArm64()

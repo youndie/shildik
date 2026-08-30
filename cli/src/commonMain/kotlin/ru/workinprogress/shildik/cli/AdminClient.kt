@@ -148,7 +148,8 @@ class AdminClient(
                 jsonBody(ImportSecretRequest(secret))
             }.decode()
 
-    suspend fun listUsers(realm: String): List<UserView> = http.get(AdminResource.Tenants.ByTenant.Users(tenant(realm))).decode()
+    suspend fun listUsers(realm: String): List<UserView> =
+        http.get(AdminResource.Tenants.ByTenant.Users(tenant(realm))).decode()
 
     suspend fun importUser(
         realm: String,

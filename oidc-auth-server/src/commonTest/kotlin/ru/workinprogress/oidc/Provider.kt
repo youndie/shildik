@@ -117,8 +117,14 @@ internal fun jwksEngine(vararg providers: Provider) =
         val provider = providers.firstOrNull { it.certs == address || it.jwksUri == address }
 
         when {
-            provider == null -> respondError(HttpStatusCode.NotFound)
-            provider.offline -> respondError(HttpStatusCode.ServiceUnavailable)
+            provider == null -> {
+                respondError(HttpStatusCode.NotFound)
+            }
+
+            provider.offline -> {
+                respondError(HttpStatusCode.ServiceUnavailable)
+            }
+
             else -> {
                 provider.calls++
                 respond(

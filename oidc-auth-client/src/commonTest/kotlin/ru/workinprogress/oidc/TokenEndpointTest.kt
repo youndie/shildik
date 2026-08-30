@@ -35,13 +35,16 @@ class TokenEndpointTest {
             MockEngine { request ->
                 val address = request.url.toString()
                 when {
-                    address == discovery && tokenEndpoint == null -> respondError(HttpStatusCode.NotFound)
+                    address == discovery && tokenEndpoint == null -> {
+                        respondError(HttpStatusCode.NotFound)
+                    }
 
-                    address == discovery ->
+                    address == discovery -> {
                         respond(
                             """{"issuer":"https://provider.test/realms/main","token_endpoint":"$tokenEndpoint"}""",
                             headers = headersOf(HttpHeaders.ContentType, "application/json"),
                         )
+                    }
 
                     else -> {
                         seen += address

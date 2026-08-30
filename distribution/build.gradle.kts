@@ -1,13 +1,20 @@
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
+    id("org.jetbrains.kotlin.multiplatform")
+    id("ru.workinprogress.sborka.kmp")
+    id("ru.workinprogress.sborka.lint")
 }
 
-/**
- * A runnable distribution — the only application in a repository of libraries.
- *
- * One target, `linuxX64`: this exists to produce the binary that goes into a container, and a
- * container runs on linux/amd64. A distribution of your own is free to declare whatever it likes.
- */
+// AN APPLICATION, not a library, and the only one here: nothing resolves this module, so there is no
+// consumer for a spelled-out public API to be spelled out for. It is not published either — the root
+// used to apply `maven-publish` to every subproject, this one included.
+kotlin {
+    explicitApi = null
+}
+
+// A runnable distribution — the only application in a repository of libraries.
+//
+// One target, `linuxX64`: this exists to produce the binary that goes into a container, and a
+// container runs on linux/amd64. A distribution of your own is free to declare whatever it likes.
 kotlin {
     linuxX64 {
         binaries.executable {
@@ -30,13 +37,11 @@ kotlin {
     }
 }
 
-/**
- * The build context for the image, assembled explicitly.
- *
- * Three things go in and nothing else: the Dockerfile, the binary, and the schema. The schema is
- * taken from the storage module's resources — the same files it applies at start-up, so the image
- * cannot ship a schema the code has never seen.
- */
+// The build context for the image, assembled explicitly.
+//
+// Three things go in and nothing else: the Dockerfile, the binary, and the schema. The schema is
+// taken from the storage module's resources — the same files it applies at start-up, so the image
+// cannot ship a schema the code has never seen.
 val imageContext =
     tasks.register<Sync>("imageContext") {
         dependsOn("linkReleaseExecutableLinuxX64")
@@ -46,10 +51,8 @@ val imageContext =
         into(layout.buildDirectory.dir("image"))
     }
 
-/**
- * Builds the container. Requires docker; there is no emulation and no fallback, because a
- * "successful" build that produced no image is worse than an error.
- */
+// Builds the container. Requires docker; there is no emulation and no fallback, because a
+// "successful" build that produced no image is worse than an error.
 val image =
     tasks.register<Exec>("image") {
         dependsOn(imageContext)
