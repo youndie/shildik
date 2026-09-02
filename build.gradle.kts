@@ -37,12 +37,19 @@ val checkTestNames by tasks.registering {
     inputs.files(sources)
     outputs.upToDateWhen { true }
 
+    // Everything the action touches is pulled out of the script HERE, at configuration time. Reading
+    // `sources` or `rootDir` from inside `doLast` reaches back into the project object, and the
+    // configuration cache refuses to serialize that: "cannot serialize Gradle script object
+    // references". Nobody met it because the task never ran — see below.
+    val files = sources.elements
+    val root = rootDir
+
     doLast {
         val offenders =
-            sources.files.flatMap { file ->
+            files.get().map { it.asFile }.flatMap { file ->
                 file.readLines().withIndex().mapNotNull { (index, line) ->
                     val name = Regex("fun\\s+`([^`]*)`").find(line)?.groupValues?.get(1)
-                    if (name != null && name.contains(',')) "${file.relativeTo(rootDir)}:${index + 1}: $name" else null
+                    if (name != null && name.contains(',')) "${file.relativeTo(root)}:${index + 1}: $name" else null
                 }
             }
         require(offenders.isEmpty()) {
@@ -51,4 +58,13 @@ val checkTestNames by tasks.registering {
     }
 }
 
-tasks.matching { it.name == "check" }.configureEach { dependsOn(checkTestNames) }
+// AND IT HAS TO BE THE SUBPROJECTS' `check`, not the root's.
+//
+// This used to read `tasks.matching { ... }` against the ROOT project's task container, which has no
+// `check` task at all unless some plugin puts a lifecycle plugin on the root. So the guard above was
+// registered, described — and never once executed. It woke up by accident when `shared-oidc` took a
+// `wasmJs` target and the Kotlin plugin applied its root-level plumbing, then failed on the
+// configuration cache. That failure is how the dead wiring was found.
+subprojects {
+    tasks.matching { it.name == "check" }.configureEach { dependsOn(checkTestNames) }
+}
