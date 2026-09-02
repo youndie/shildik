@@ -1,3 +1,7 @@
+// `wasmJs` is still behind an opt-in in the Kotlin DSL (Kotlin 2.4.10). Without this the build
+// script compiles with a warning, and warnings here are the kind that get read once and then not.
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("ru.workinprogress.sborka.kmp")
@@ -13,6 +17,7 @@ kotlin {
     macosArm64()
     linuxX64()
     linuxArm64()
+    wasmJs { browser() }
 
     sourceSets {
         commonMain.dependencies {
