@@ -153,10 +153,16 @@ which of them a given provider serves is its business, and the libraries no long
 
 ## Targets
 
-`jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with three exceptions: `ktor-role-based-auth` is
+`jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with four exceptions: `ktor-role-based-auth` is
 JVM, because Ktor's authentication plugin is; `storage-sqlx4k` and `server-boot` are JVM and
 `linuxX64`, which is what the database driver publishes; `distribution` is `linuxX64` alone,
 because it exists to become a container.
+
+The fourth goes the other way. `shared-oidc` adds `wasmJs`, because a browser is a client of this
+provider like any other and the addresses are the whole point of the module: without that target a
+web client assembles `/realms/…/protocol/openid-connect/auth` out of strings and finds out it got a
+parameter name wrong when somebody tries to sign in. Nothing in the module is platform-specific,
+and both of its dependencies — `ktor-resources` and `kotlinx-serialization-json` — publish for it.
 
 ## Run one
 
