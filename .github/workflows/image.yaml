@@ -1,8 +1,17 @@
 name: Image
 
-# Manual, and by tag. A provider image is a thing people deploy, and one appearing because a
-# README changed is how a registry fills with versions nobody chose.
+# On a release tag, and on demand. A provider image is a thing people deploy, and one appearing
+# because a README changed is how a registry fills with versions nobody chose — so this is still not
+# built on every push to `main`.
+#
+# A tag is the missing half of that rule rather than an exception to it. It is the moment somebody
+# decided there is a version: the same judgement the manual button exists to require, made once and
+# written into git instead of into a browser form. Without it the registry could lag `main`
+# indefinitely with nothing able to say so — a fix sat unpublished for four days that way (#22), and
+# neither the code nor CI could have reported it, because both were green and both were right.
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       version:
@@ -49,8 +58,20 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           LATEST: ${{ inputs.latest }}
+          # Empty on a manual run. `inputs` are empty on a tag push, so the two never both speak.
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           REPO: ghcr.io/${{ github.repository }}
         run: |
+          # A tag names its own version: `v0.2.0.13` becomes `0.2.0.13`. Reading `inputs` on this
+          # event would silently produce an image with only a commit tag — a release nobody can
+          # ask for by name.
+          if [ -n "$TAG" ]; then
+            VERSION="${TAG#v}"
+            # A release moves `latest`, because that is what the word means to whoever pulls it.
+            # The one way this is wrong is a tag placed on an old commit, and the remedy is the
+            # button that is still here: dispatch from the commit that should be latest.
+            LATEST=true
+          fi
           tags="$REPO:sha-$(git rev-parse --short HEAD)"
           if [ -n "$VERSION" ]; then tags="$tags,$REPO:$VERSION"; fi
           if [ "$LATEST" = "true" ]; then tags="$tags,$REPO:latest"; fi

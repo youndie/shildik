@@ -183,7 +183,8 @@ curl -X POST localhost:8080/realms/main/protocol/openid-connect/token \
 ```
 
 The image is `ghcr.io/youndie/shildik` — 44 MB, `linux/amd64`, the reference distribution with
-every sign-in method compiled in. In a cluster there is a chart:
+every sign-in method compiled in. Its tags name releases: a version like `0.2.0.13`, the commit it
+was built from as `sha-a62db6d`, and `latest` for the newest release. In a cluster there is a chart:
 
 ```bash
 helm install idp oci://ghcr.io/youndie/charts/shildik \
