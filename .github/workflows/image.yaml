@@ -95,7 +95,7 @@ jobs:
       # A multi-arch manifest would need a second Kotlin/Native target and a second link — worth
       # doing when somebody asks for arm64, not before.
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: distribution/build/image
           platforms: linux/amd64
