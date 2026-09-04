@@ -26,8 +26,9 @@ installation, not a provider.
 |---|---|
 | `core` | the domain: tenants, clients, users, codes, tokens, signing keys |
 | `server` | the HTTP layer — the OIDC contour, the admin API, the sign-in page |
-| `storage-sqlx4k` | PostgreSQL behind the domain's ports, on the JVM and on native alike |
-| `storage-sqlx4k-sqlite` | the same ports on SQLite: one file, one instance, no database to operate |
+| `storage-sqlx4k-core` | the domain's ports over sqlx4k — repositories, queries, migrations, no driver |
+| `storage-sqlx4k` | PostgreSQL: the driver, the schema, the lock migrations take |
+| `storage-sqlx4k-sqlite` | SQLite: one file, one instance, no database to operate |
 | `shared` | the admin API wire: addresses as Ktor resources, models |
 | `auth-password` | sign-in by password: PBKDF2, attempt counting, lock-out |
 | `auth-google` | sign-in through Google |
@@ -35,6 +36,7 @@ installation, not a provider.
 | `cli` | a native `shildik` binary for the management port |
 | `server-boot` | shared start-up: the environment, the configuration, both engines |
 | `distribution` | a reference `main()` — the thing the published image is built from |
+| `distribution-sqlite` | the same reference build on SQLite, and its image |
 
 Assembling a distribution is the consumer's `main()` — the recipe is
 [docs/thin-server.md](docs/thin-server.md):
@@ -155,9 +157,9 @@ which of them a given provider serves is its business, and the libraries no long
 ## Targets
 
 `jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with four exceptions: `ktor-role-based-auth` is
-JVM, because Ktor's authentication plugin is; the two storages and `server-boot` are JVM and
-`linuxX64`, which is what the database drivers publish; `distribution` is `linuxX64` alone,
-because it exists to become a container.
+JVM, because Ktor's authentication plugin is; the three storage modules and `server-boot` are JVM
+and `linuxX64`, which is what the database drivers publish; the distributions are `linuxX64`
+alone, because they exist to become containers.
 
 The fourth goes the other way. `shared-oidc` adds `wasmJs`, because a browser is a client of this
 provider like any other and the addresses are the whole point of the module: without that target a

@@ -22,13 +22,13 @@
 -- The order of the statements is the order of the foreign keys: a table is created after the one
 -- it points at.
 --
--- **The foreign keys are declared and not enforced.** SQLite leaves them off per connection, and
--- the driver offers no way to switch them on: it accepts only SQLite's four URI parameters, and the
--- connections come from a pool nobody here holds. They stay in the file because they say what the
--- shape is — and because a schema that hides its own relationships is worse than one whose
--- constraints a reader has to check. What keeps the rows consistent is the code that deletes them,
--- and `SqliteStorageTest` pins both halves: that an orphan row is possible, and that no repository
--- leaves one behind.
+-- **The foreign keys are enforced where this runs, and not everywhere.** SQLite leaves them off per
+-- connection, and the drivers differ: sqlx — the native build, the one that ships — turns them on
+-- for every connection, while the JVM driver used in development and tests does not, and sqlx4k
+-- offers no way to ask it. So a schema that relied on them would be right in production and quietly
+-- permissive in a test. It does not rely on them: the code deletes child rows itself, and
+-- `SqliteStorageTest` pins both halves — what each platform enforces, and that no repository leaves
+-- an orphan behind.
 
 CREATE TABLE tenants (
     id text NOT NULL,

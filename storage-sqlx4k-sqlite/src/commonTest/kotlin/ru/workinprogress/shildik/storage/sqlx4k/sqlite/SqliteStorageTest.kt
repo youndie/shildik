@@ -1,6 +1,6 @@
 package ru.workinprogress.shildik.storage.sqlx4k.sqlite
 
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import ru.workinprogress.shildik.core.model.AuthorizationCode
@@ -35,6 +35,13 @@ import kotlin.time.Instant
 /**
  * The repositories, against a real SQLite.
  *
+ * **`runBlocking`, not `runTest`, and that is not a preference.** Inside `runTest` time is virtual,
+ * and the query path bounds its wait with a timeout: on native that wait happens in the caller's
+ * context, so the ten-second deadline fires instantly while the database is still answering. Every
+ * query test failed that way — on native only, because on the JVM the same code steps onto
+ * `Dispatchers.IO` and lands back in real time. A test of a real database has nothing to gain from
+ * a virtual clock anyway.
+ *
  * These are the first tests the storage has, and they exist because the second adapter is where a
  * dialect actually differs: the SQL is shared with Postgres, so what has to be checked is not that
  * a query is right but that **SQLite answers it the same way** — a boolean read back as a boolean,
@@ -62,7 +69,7 @@ class SqliteStorageTest {
 
     @Test
     fun `applying the migrations again finds nothing to do`() =
-        runTest {
+        runBlocking {
             // The bookkeeping table is the migrator's, and a second start-up is the ordinary case:
             // a pod restarts far more often than a schema changes.
             migrateUnlocked(db, requireNotNull(env("SHILDIK_TEST_MIGRATIONS")))
@@ -73,7 +80,7 @@ class SqliteStorageTest {
 
     @Test
     fun `booleans survive the round trip`() =
-        runTest {
+        runBlocking {
             // SQLite has no boolean type: `true` in a statement is the integer 1 coming back. If
             // that did not read as a boolean, every flag in the provider — a public client, a
             // disabled user, a closed realm — would come back wrong side up.
@@ -89,7 +96,7 @@ class SqliteStorageTest {
 
     @Test
     fun `a signing key comes back byte for byte`() =
-        runTest {
+        runBlocking {
             // The column is `bytea` on Postgres and `blob` here, and the key is a DER-encoded
             // private key: a driver that handed it back as text would break signing, not storage.
             tenants.create(tenant())
@@ -101,7 +108,7 @@ class SqliteStorageTest {
 
     @Test
     fun `an upsert updates rather than fails`() =
-        runTest {
+        runBlocking {
             // `on conflict … do update set … excluded.…` is the one piece of syntax this schema
             // leans on that a database could refuse. SQLite has had it since 3.24; if the bundled
             // one were older, saving a client twice would fail on the primary key.
@@ -116,7 +123,7 @@ class SqliteStorageTest {
 
     @Test
     fun `a number that was never written stays absent`() =
-        runTest {
+        runBlocking {
             // Three nullable columns carry a moment in time: `used_at`, `locked_until`,
             // `retiring_since`. A driver that turned NULL into 0 would date every one of them to
             // 1970 — a lock that has expired, a key retired long ago.
@@ -132,7 +139,7 @@ class SqliteStorageTest {
 
     @Test
     fun `marking a code used says whether this call was the one that did it`() =
-        runTest {
+        runBlocking {
             // The answer is the number of rows the statement changed, and it is the whole defence
             // against replaying an authorization code: the second exchange has to be refused.
             tenants.create(tenant())
@@ -144,7 +151,7 @@ class SqliteStorageTest {
 
     @Test
     fun `a transaction that fails leaves nothing behind`() =
-        runTest {
+        runBlocking {
             assertFails {
                 transactions.withTransaction {
                     tenants.create(tenant())
@@ -156,26 +163,28 @@ class SqliteStorageTest {
         }
 
     @Test
-    fun `a row may outlive the tenant it points at`() =
-        runTest {
-            // **This states what is true, not what would be nice.** SQLite leaves foreign keys off
-            // per connection, and there is no way to turn them on through this driver: it accepts
-            // only the four URL parameters SQLite defines for filenames, and the pool opens
-            // connections nobody here can reach with a `PRAGMA`. So the schema's `REFERENCES` are
-            // a description of the shape, and the database enforces none of them.
+    fun `foreign keys are enforced where the provider actually runs`() {
+        runBlocking {
+            // **The two drivers disagree, and this test says so out loud.** On native — the build
+            // that ships — sqlx switches foreign keys on when it opens a connection, and a client
+            // pointing at a tenant that does not exist is refused. On the JVM the same insert
+            // succeeds: xerial leaves them off and sqlx4k offers no way to ask.
             //
-            // The test is here in both directions. It fails if a driver ever starts enforcing
-            // them — which would be good news needing a second look, not a surprise in production
-            // — and it keeps the fact visible to whoever reads the schema and assumes otherwise.
-            // What actually keeps the rows consistent is the code: see the test below.
-            clients.upsert(confidentialClient(tenantId = TenantId("ghost")))
-
-            assertEquals(1, clients.list(TenantId("ghost")).size)
+            // It was written as one assertion for both, passed on the JVM, and failed on native
+            // with `FOREIGN KEY constraint failed` — which is how the difference was found at all.
+            // Asserting the weaker half on both platforms would have hidden it again.
+            if (foreignKeysEnforced) {
+                assertFails { clients.upsert(confidentialClient(tenantId = TenantId("ghost"))) }
+            } else {
+                clients.upsert(confidentialClient(tenantId = TenantId("ghost")))
+                assertEquals(1, clients.list(TenantId("ghost")).size)
+            }
         }
+    }
 
     @Test
     fun `deleting a client takes its rows with it`() =
-        runTest {
+        runBlocking {
             // The integrity the database is not enforcing, enforced where it actually lives:
             // `delete` clears the child tables before the client. On Postgres the cascade would
             // catch a miss here; on SQLite nothing would, and orphaned roles would grant a client

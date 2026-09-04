@@ -56,3 +56,17 @@ internal class TestDatabase private constructor(
  * `getenv` is POSIX's, and neither is common code.
  */
 internal expect fun env(name: String): String?
+
+/**
+ * Whether this platform's driver enforces the schema's foreign keys.
+ *
+ * SQLite leaves them off per connection and each driver decides for itself: sqlx turns them on
+ * when it opens a connection, so the native build — the one that ships — refuses a row pointing at
+ * a tenant that is not there. The JVM driver does not, and there is no way to ask it through
+ * sqlx4k: the connection URL takes only SQLite's four filename parameters, and a `PRAGMA` reaches
+ * one connection of a pool nobody here holds.
+ *
+ * Written down as a fact of the platform rather than hidden behind a test that passes on both:
+ * production is native, and the difference belongs where a reader will meet it.
+ */
+internal expect val foreignKeysEnforced: Boolean

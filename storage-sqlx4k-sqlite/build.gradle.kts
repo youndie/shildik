@@ -14,7 +14,7 @@ plugins {
 // repository holds for sign-in methods, and a database backend is not a lesser case.
 //
 // What is **not** duplicated here: the repositories, the query helpers and the migration runner
-// all come from `storage-sqlx4k` unchanged. The dialect the domain's SQL is written in is common
+// all come from `storage-sqlx4k-core` unchanged. The dialect the domain's SQL is written in is common
 // to both databases — including the `on conflict … do update set … excluded.…` upsert, which
 // SQLite has had since 3.24. Only three things differ, and they are all in this module: how the
 // driver is opened, that the schema is stated in SQLite's own types, and that the migration lock
@@ -27,9 +27,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            // `api`, not `implementation`: a consumer assembling this storage names the ports from
-            // `core` and the repositories from `storage-sqlx4k` in its own `main()`.
-            api(project(":storage-sqlx4k"))
+            // `storage-sqlx4k-core`, **not** `storage-sqlx4k`: the latter carries the Postgres
+            // driver, and a native binary that links two of sqlx4k's drivers does not link at all
+            // — each brings its own Rust runtime and they define the same symbols.
+            api(project(":storage-sqlx4k-core"))
             implementation(libs.sqlx4k.sqlite)
             implementation(libs.kotlinx.io)
             implementation(libs.koin.core)

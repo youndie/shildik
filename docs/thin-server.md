@@ -75,7 +75,10 @@ implementation("ru.workinprogress.shildik:storage-sqlx4k-sqlite:$shildik")
 ```
 
 The ports, the repositories and the SQL are the same ones — `storage-sqlx4k-sqlite` supplies a
-driver and a schema written in SQLite's types, and takes everything else from `storage-sqlx4k`.
+driver and a schema written in SQLite's types, and takes everything else from
+`storage-sqlx4k-core`. Do not depend on both storage modules at once: each driver links its own
+Rust runtime, and a native binary that reaches two of them fails at the linker on duplicate
+symbols.
 The file is created on first start, directory included, and `SHILDIK_MIGRATIONS` points at the
 `migrations` directory of **this** module: the two schemas are not interchangeable, and a build
 that unpacks the Postgres one will fail on the first statement rather than quietly disagree.

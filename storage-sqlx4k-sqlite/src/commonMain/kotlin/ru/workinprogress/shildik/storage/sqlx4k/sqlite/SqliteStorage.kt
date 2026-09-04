@@ -40,12 +40,15 @@ const val SQLITE_POOL: Int = 2
 /**
  * The URL sqlx4k is given: the path, and nothing else.
  *
- * **There is no pragma to add here, and that was worth finding out.** sqlx4k accepts exactly the
- * four parameters SQLite defines for URI filenames — `mode`, `cache`, `immutable`, `vfs` — and
- * rejects anything else. `?foreign_keys=on` was tried first: the JVM driver took it (xerial passes
- * unknown keys to SQLite) and the native one refused the connection URL outright, panicking in
- * Rust before the first log line. One platform enforcing referential integrity and the other
- * failing to start is the worst of both, so neither does now — see the schema for what that means.
+ * **There is no pragma to put here, and finding that out cost two failures.** sqlx4k accepts
+ * exactly the four parameters SQLite defines for URI filenames — `mode`, `cache`, `immutable`,
+ * `vfs` — and rejects the rest. `?foreign_keys=on` was tried first: the JVM driver took it, and
+ * the native one refused the connection URL outright, panicking in Rust before the first log line.
+ *
+ * Foreign keys are enforced anyway where it matters. sqlx switches them on for every connection it
+ * opens, so the native build — the one that ships — refuses a row pointing at a tenant that is not
+ * there; the JVM driver leaves them off and nothing here can ask it otherwise. `SqliteStorageTest`
+ * states both, per platform, rather than quietly asserting the weaker of the two.
  *
  * The JVM driver also keeps a second parameter inside the **file name**: with
  * `?mode=rwc&foreign_keys=on` the database landed on disk as `local.db?mode=rwc`. `mode=rwc` is
