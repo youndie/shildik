@@ -57,6 +57,35 @@ No environment variable, no `values.yaml` and no mistake in a Helm template can 
 because the code is not in the binary. That is the property worth having, and it is the reason
 this file exists separately from the README.
 
+## The same thing on SQLite
+
+Two lines of the recipe change, and nothing else does:
+
+```kotlin
+fun main() =
+    runShildik(
+        storage = { config -> sqlx4kSqliteStorageModule(config, optional("SHILDIK_MIGRATIONS")) },
+    ) {
+        listOf(PasswordAuthMethod(get(), get(), get(), get()))
+    }
+```
+
+```kotlin
+implementation("ru.workinprogress.shildik:storage-sqlx4k-sqlite:$shildik")
+```
+
+The ports, the repositories and the SQL are the same ones — `storage-sqlx4k-sqlite` supplies a
+driver and a schema written in SQLite's types, and takes everything else from `storage-sqlx4k`.
+The file is created on first start, directory included, and `SHILDIK_MIGRATIONS` points at the
+`migrations` directory of **this** module: the two schemas are not interchangeable, and a build
+that unpacks the Postgres one will fail on the first statement rather than quietly disagree.
+
+**What you give up is a second replica.** One SQLite file cannot be shared by two pods — not as a
+performance limit but as data loss — so a SQLite installation runs a single instance and takes its
+downtime on every deploy. That is the trade an installation makes: no database to operate, and no
+rolling restart. For anything with more than one pod, Postgres is next door and the swap is the
+one line above.
+
 ## What `runShildik` does for you
 
 Reads the configuration from the environment, builds the object graph, starts two Ktor engines
@@ -66,8 +95,9 @@ and blocks. The variables it reads:
 |---|---|
 | `SHILDIK_ISSUER` | required; must equal the address the service actually answers on — clients read it from discovery and compare |
 | `SHILDIK_MASTER_KEYS` | required; comma-separated, the first encrypts and the rest are accepted while a rotation is in progress |
-| `SHILDIK_DB_USER`, `SHILDIK_DB_PASSWORD` | required |
+| `SHILDIK_DB_USER`, `SHILDIK_DB_PASSWORD` | required — unless `SHILDIK_DB_PATH` is set, because a file has no account |
 | `SHILDIK_JDBC_URL` | `jdbc:postgresql://localhost:5432/shildik` by default |
+| `SHILDIK_DB_PATH` | a SQLite file; setting it is what makes a build on `storage-sqlx4k-sqlite` a SQLite installation |
 | `SHILDIK_PORT`, `SHILDIK_MANAGEMENT_PORT` | `8080` and `9000` |
 | `SHILDIK_BOOTSTRAP_TOKEN` | optional; without it a random one is printed to the log while no admin client exists |
 | `SHILDIK_MIGRATIONS` | a directory; absent means migrations do not run at all |
@@ -142,9 +172,10 @@ in silence.
 
 ## What this does not save you from
 
-- **Running a database.** The provider is stateless; the state is Postgres, and it is yours to
-  back up. The signing keys live there, encrypted with `SHILDIK_MASTER_KEYS` — lose both and the
-  tokens you issued are unverifiable.
+- **Running a database.** The provider is stateless; the state is Postgres — or the SQLite file,
+  which is yours to back up just the same and is easier to forget precisely because nothing has to
+  be operated. The signing keys live there, encrypted with `SHILDIK_MASTER_KEYS` — lose both and
+  the tokens you issued are unverifiable.
 - **Deciding who may sign in.** An external provider answers "who is this", never "this one is
   allowed". A tenant created with `--closed` admits only people an administrator provisioned.
 - **Exposing the management port.** It has no business behind the same ingress as the public one.

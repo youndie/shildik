@@ -40,6 +40,10 @@ include(":oidc-auth-server")
 include(":shared")
 include(":core")
 include(":storage-sqlx4k")
+// The second storage, and a module of its own for the same reason a sign-in method is: a build
+// that does not depend on it cannot be pointed at SQLite by a setting, and the Postgres
+// installations carry no second driver.
+include(":storage-sqlx4k-sqlite")
 include(":server")
 include(":auth-password")
 include(":auth-google")

@@ -27,6 +27,7 @@ installation, not a provider.
 | `core` | the domain: tenants, clients, users, codes, tokens, signing keys |
 | `server` | the HTTP layer — the OIDC contour, the admin API, the sign-in page |
 | `storage-sqlx4k` | PostgreSQL behind the domain's ports, on the JVM and on native alike |
+| `storage-sqlx4k-sqlite` | the same ports on SQLite: one file, one instance, no database to operate |
 | `shared` | the admin API wire: addresses as Ktor resources, models |
 | `auth-password` | sign-in by password: PBKDF2, attempt counting, lock-out |
 | `auth-google` | sign-in through Google |
@@ -154,8 +155,8 @@ which of them a given provider serves is its business, and the libraries no long
 ## Targets
 
 `jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with four exceptions: `ktor-role-based-auth` is
-JVM, because Ktor's authentication plugin is; `storage-sqlx4k` and `server-boot` are JVM and
-`linuxX64`, which is what the database driver publishes; `distribution` is `linuxX64` alone,
+JVM, because Ktor's authentication plugin is; the two storages and `server-boot` are JVM and
+`linuxX64`, which is what the database drivers publish; `distribution` is `linuxX64` alone,
 because it exists to become a container.
 
 The fourth goes the other way. `shared-oidc` adds `wasmJs`, because a browser is a client of this

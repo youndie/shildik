@@ -50,13 +50,36 @@ fun migrate(
         val lock = db.begin().getOrThrow()
         try {
             lock.execute(Statement.create("select pg_advisory_xact_lock($LOCK_KEY)")).getOrThrow()
-            db.migrate(supplier = { read(path) }).getOrThrow()
+            applyFiles(db, path)
         } finally {
             // Commit rather than rollback: the lock has to be released either way, and this
             // transaction has nothing to undo — one lock and not a single write.
             lock.commit().getOrThrow()
         }
     }
+}
+
+/**
+ * The same files, applied without a lock of our own.
+ *
+ * For SQLite, where there is nobody to keep out. The lock above answers a rollout that starts a
+ * second pod before stopping the first; a SQLite installation cannot have a second pod at all,
+ * because two of them would be sharing one file — a broken database rather than a race between
+ * migrations. Advisory locks are Postgres's, and imitating one here would mean inventing a
+ * mechanism to protect against a deployment that is already impossible.
+ */
+fun migrateUnlocked(
+    db: Driver,
+    path: String,
+) {
+    runBlocking { applyFiles(db, path) }
+}
+
+private suspend fun applyFiles(
+    db: Driver,
+    path: String,
+) {
+    db.migrate(supplier = { read(path) }).getOrThrow()
 }
 
 /**

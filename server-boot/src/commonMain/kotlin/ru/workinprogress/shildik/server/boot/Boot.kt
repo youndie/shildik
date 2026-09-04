@@ -57,18 +57,27 @@ fun runShildik(
 /** The build version, for whatever a distribution attaches as observability. */
 val release: String get() = optional("SHILDIK_RELEASE") ?: "dev"
 
-private fun loadConfig(): ShildikConfig =
-    ShildikConfig(
+private fun loadConfig(): ShildikConfig {
+    // A file has no account. `SHILDIK_DB_PATH` is what tells the two storages apart here, and it
+    // is the reason the database user and password stop being mandatory: demanding them from an
+    // installation that runs on SQLite would mean inventing two values for nobody to use, and a
+    // secret that exists only to satisfy a check is a secret somebody sets to `x`.
+    val databasePath = optional("SHILDIK_DB_PATH")
+
+    return ShildikConfig(
         issuer = required("SHILDIK_ISSUER"),
         publicPort = optional("SHILDIK_PORT")?.toInt() ?: 8080,
         managementPort = optional("SHILDIK_MANAGEMENT_PORT")?.toInt() ?: 9000,
         // Several keys separated by commas: the first is current, the rest are for a rotation.
         masterKeys = required("SHILDIK_MASTER_KEYS").split(",").map(String::trim).filter(String::isNotBlank),
         jdbcUrl = optional("SHILDIK_JDBC_URL") ?: "jdbc:postgresql://localhost:5432/shildik",
-        dbUser = required("SHILDIK_DB_USER"),
-        dbPassword = required("SHILDIK_DB_PASSWORD"),
+        dbUser = if (databasePath == null) required("SHILDIK_DB_USER") else optional("SHILDIK_DB_USER").orEmpty(),
+        dbPassword =
+            if (databasePath == null) required("SHILDIK_DB_PASSWORD") else optional("SHILDIK_DB_PASSWORD").orEmpty(),
         bootstrapToken = optional("SHILDIK_BOOTSTRAP_TOKEN"),
+        databasePath = databasePath,
     )
+}
 
 private fun required(name: String): String =
     optional(name) ?: error(

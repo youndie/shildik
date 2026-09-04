@@ -31,6 +31,7 @@ fun sqlx4kStorageModule(
     migrationsPath: String? = null,
 ): Module =
     module {
+        includes(sqlx4kPorts())
         single<Driver> {
             postgres(jdbcUrl, user, password).also { db ->
                 // Migrations are the storage's business, as before: a service must not start on
@@ -45,6 +46,18 @@ fun sqlx4kStorageModule(
             // JVM exhausted Postgres `max_connections`, and the **whole** suite fell over on
             // `too many clients`.
         } onClose { driver -> driver?.let { db -> runBlocking { db.close() } } }
+    }
+
+/**
+ * The ports, with no driver among them.
+ *
+ * Split out so a second storage can reuse them: every repository above is written against
+ * sqlx4k's `Driver` and the SQL both databases understand, so what a SQLite build needs to bring
+ * of its own is the driver and the schema — not eleven more lines naming the same classes. Two
+ * copies of this list would agree until somebody added a twelfth port to one of them.
+ */
+fun sqlx4kPorts(): Module =
+    module {
         single<StorageHealth> { Sqlx4kStorageHealth(get()) }
         single<TenantRepository> { Sqlx4kTenantRepository(get()) }
         single<ClientRepository> { Sqlx4kClientRepository(get()) }
