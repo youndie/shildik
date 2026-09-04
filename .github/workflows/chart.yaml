@@ -5,6 +5,11 @@ name: Chart
 on:
   workflow_dispatch:
     inputs:
+      chart:
+        description: which chart to publish
+        type: choice
+        options: [shildik, shildik-sqlite]
+        default: shildik
       appVersion:
         description: 'image tag the chart defaults to, e.g. 0.2.0.8 — empty keeps Chart.yaml'
         type: string
@@ -25,12 +30,15 @@ jobs:
         if: inputs.appVersion != ''
         env:
           APP_VERSION: ${{ inputs.appVersion }}
+          CHART: ${{ inputs.chart }}
         run: |
-          sed -i "s|^appVersion: .*|appVersion: \"$APP_VERSION\"|" charts/shildik/Chart.yaml
-          grep '^appVersion:' charts/shildik/Chart.yaml
+          sed -i "s|^appVersion: .*|appVersion: \"$APP_VERSION\"|" "charts/$CHART/Chart.yaml"
+          grep '^appVersion:' "charts/$CHART/Chart.yaml"
 
+      # One chart per run, like one version per decision: the two carry different images and
+      # have no reason to be versioned together.
       - name: Package
-        run: helm package charts/shildik --destination dist
+        run: helm package "charts/${{ inputs.chart }}" --destination dist
 
       - name: Log in to ghcr
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -38,7 +46,7 @@ jobs:
       # `oci://ghcr.io/<owner>/charts` — the chart's own name is appended by helm, so the result is
       # `ghcr.io/<owner>/charts/shildik`.
       - name: Push
-        run: helm push dist/shildik-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+        run: helm push "$(ls dist/*.tgz)" oci://ghcr.io/${{ github.repository_owner }}/charts
 
       - name: Summary
         run: |
@@ -46,6 +54,6 @@ jobs:
             echo '### pushed'
             echo
             echo '```bash'
-            echo "helm install idp oci://ghcr.io/${{ github.repository_owner }}/charts/shildik"
+            echo "helm install idp oci://ghcr.io/${{ github.repository_owner }}/charts/${{ inputs.chart }}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

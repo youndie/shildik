@@ -199,7 +199,17 @@ takes a moment of downtime on deploy.
 docker compose -f docker/compose-sqlite.yaml up -d
 ```
 
-In a cluster there is a chart:
+In a cluster each image has a chart of its own:
+
+```bash
+helm install idp oci://ghcr.io/youndie/charts/shildik-sqlite \
+  --set issuer=https://id.example.com \
+  --set ingress.host=id.example.com
+```
+
+That one has no `replicaCount`: the state is a file on a `ReadWriteOnce` volume, so the deployment
+says one replica and `Recreate`, and an upgrade costs a few seconds of downtime. The Postgres chart
+is the one to use where that is not acceptable:
 
 ```bash
 helm install idp oci://ghcr.io/youndie/charts/shildik \

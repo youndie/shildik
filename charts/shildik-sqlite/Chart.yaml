@@ -1,0 +1,12 @@
+apiVersion: v2
+name: shildik-sqlite
+description: An OpenID Connect provider — one native binary and one file, no database to operate
+type: application
+version: 0.1.0
+# The image tag this chart defaults to. `shildik-sqlite` has no released version yet, so it names
+# the commit its image was built from — which is what an image tag is for. Replace it with a
+# version as soon as one is tagged; the workflow that publishes this chart takes one as an input.
+appVersion: "sha-d2c3c31"
+home: https://github.com/youndie/shildik
+sources:
+  - https://github.com/youndie/shildik

@@ -1,0 +1,86 @@
+image:
+  repository: ghcr.io/youndie/shildik-sqlite
+  # Empty means the chart's appVersion. Pin it in a real installation: `latest` and "whatever the
+  # chart shipped with" are both ways of not knowing what is running.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# The address the provider answers on. It goes into every token as `iss` and into discovery, and
+# clients compare the two — so it must equal the address that actually reaches the pod, scheme
+# included. There is no default: a wrong issuer fails at the client, hours later, as "sign-in is
+# broken" rather than as a bad value here.
+issuer: ""
+
+# **There is no `replicaCount`, and that is the point of this chart.**
+#
+# The state is one SQLite file on one volume. Two pods sharing it is not slower — it is a corrupt
+# database, and the second pod would not even start on a `ReadWriteOnce` volume. A value that
+# cannot be raised does not belong in `values.yaml`, where it would read as a choice; the
+# deployment says `replicas: 1` and `strategy: Recreate`, so an upgrade stops the old pod before
+# starting the new one. That is a few seconds during which nobody can sign in.
+#
+# An installation that cannot take those seconds wants the `shildik` chart and a PostgreSQL.
+
+ports:
+  public: 8080
+  # **Never published through the ingress.** The admin API lives here, and the whole access model
+  # is that it does not exist on the public network.
+  management: 9000
+
+ingress:
+  enabled: true
+  className: ""
+  host: ""
+  annotations: {}
+  tls:
+    enabled: false
+    # Empty means the ingress controller's default certificate.
+    secretName: ""
+
+# Where the database lives. Everything the provider has is in this file: tenants, clients, users,
+# and the signing keys — so the volume is the backup, and `storage.size` is not a number to shrug
+# at even though the data is small.
+storage:
+  path: /data
+  filename: shildik.db
+  size: 1Gi
+  # Empty means the cluster's default storage class. It must be `ReadWriteOnce`-capable and local
+  # to a node is fine; what it must not be is anything shared, for the reason above.
+  className: ""
+  # An existing claim to use instead of the one this chart creates. For an installation that
+  # manages its own volumes, and for restoring onto a claim that already holds a database.
+  existingClaim: ""
+
+# Secrets come from cluster secrets by name, never from values: values are visible through
+# `helm get values` and end up committed.
+secret:
+  name: shildik-secret
+  # Comma-separated. The first key encrypts, the rest are accepted while a rotation is in flight.
+  masterKeysKey: SHILDIK_MASTER_KEYS
+  # Optional. Without it a random bootstrap token is printed to the log on every start while no
+  # admin client exists.
+  bootstrapTokenKey: ""
+
+# Sign-in methods configure themselves from the environment: a key that is absent means a method
+# that is not offered. What the image cannot do is carry a method it was not built with — see
+# docs/thin-server.md.
+env: []
+# - name: GOOGLE_CLIENT_ID
+#   value: "…"
+
+# **Taken from the Postgres chart, not measured on this build.** The provider is the same binary
+# with a different driver; what SQLite adds is a page cache per connection, and the pool here is
+# two. Measure your own installation before trimming these — an OOMKill on a single-replica
+# provider is a sign-in outage with no second pod to carry it.
+resources:
+  requests:
+    cpu: 30m
+    memory: 64Mi
+  limits:
+    cpu: "1"
+    memory: 256Mi
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
