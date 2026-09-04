@@ -156,12 +156,36 @@ class SqliteStorageTest {
         }
 
     @Test
-    fun `a client cannot be stored for a tenant that does not exist`() =
+    fun `a row may outlive the tenant it points at`() =
         runTest {
-            // Foreign keys are off by default in SQLite, per connection, and this test is what
-            // says the pragma on the connection string still reaches the pool. Measured before it
-            // was there: the insert below succeeded and the orphan row stayed.
-            assertFails { clients.upsert(confidentialClient(tenantId = TenantId("ghost"))) }
+            // **This states what is true, not what would be nice.** SQLite leaves foreign keys off
+            // per connection, and there is no way to turn them on through this driver: it accepts
+            // only the four URL parameters SQLite defines for filenames, and the pool opens
+            // connections nobody here can reach with a `PRAGMA`. So the schema's `REFERENCES` are
+            // a description of the shape, and the database enforces none of them.
+            //
+            // The test is here in both directions. It fails if a driver ever starts enforcing
+            // them — which would be good news needing a second look, not a surprise in production
+            // — and it keeps the fact visible to whoever reads the schema and assumes otherwise.
+            // What actually keeps the rows consistent is the code: see the test below.
+            clients.upsert(confidentialClient(tenantId = TenantId("ghost")))
+
+            assertEquals(1, clients.list(TenantId("ghost")).size)
+        }
+
+    @Test
+    fun `deleting a client takes its rows with it`() =
+        runTest {
+            // The integrity the database is not enforcing, enforced where it actually lives:
+            // `delete` clears the child tables before the client. On Postgres the cascade would
+            // catch a miss here; on SQLite nothing would, and orphaned roles would grant a client
+            // that no longer exists whatever they say.
+            tenants.create(tenant())
+            clients.upsert(confidentialClient(roles = setOf("a", "b")))
+            clients.delete(TENANT, "api")
+
+            assertNull(clients.find(TENANT, "api"))
+            assertEquals(emptyList(), clients.list(TENANT))
         }
 
     @Test

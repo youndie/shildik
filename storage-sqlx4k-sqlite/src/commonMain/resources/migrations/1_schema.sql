@@ -21,6 +21,14 @@
 --
 -- The order of the statements is the order of the foreign keys: a table is created after the one
 -- it points at.
+--
+-- **The foreign keys are declared and not enforced.** SQLite leaves them off per connection, and
+-- the driver offers no way to switch them on: it accepts only SQLite's four URI parameters, and the
+-- connections come from a pool nobody here holds. They stay in the file because they say what the
+-- shape is — and because a schema that hides its own relationships is worse than one whose
+-- constraints a reader has to check. What keeps the rows consistent is the code that deletes them,
+-- and `SqliteStorageTest` pins both halves: that an orphan row is possible, and that no repository
+-- leaves one behind.
 
 CREATE TABLE tenants (
     id text NOT NULL,

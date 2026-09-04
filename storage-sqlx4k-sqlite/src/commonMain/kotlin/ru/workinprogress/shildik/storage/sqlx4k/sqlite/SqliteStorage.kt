@@ -38,22 +38,21 @@ fun sqlite(
 const val SQLITE_POOL: Int = 2
 
 /**
- * The URL sqlx4k is given, with the one setting that cannot be left out.
+ * The URL sqlx4k is given: the path, and nothing else.
  *
- * **`foreign_keys=on` is not a preference.** SQLite ships foreign keys switched off per
- * connection, so a schema full of `REFERENCES … ON DELETE CASCADE` would be decoration: a client
- * could be stored for a tenant that does not exist, and be refused on Postgres. It rides on the
- * connection string rather than being executed once, because the pool opens connections we never
- * see — `PRAGMA foreign_keys = ON` run against the driver configures whichever connection answered
- * it, and the next query may go to the other one.
+ * **There is no pragma to add here, and that was worth finding out.** sqlx4k accepts exactly the
+ * four parameters SQLite defines for URI filenames — `mode`, `cache`, `immutable`, `vfs` — and
+ * rejects anything else. `?foreign_keys=on` was tried first: the JVM driver took it (xerial passes
+ * unknown keys to SQLite) and the native one refused the connection URL outright, panicking in
+ * Rust before the first log line. One platform enforcing referential integrity and the other
+ * failing to start is the worst of both, so neither does now — see the schema for what that means.
  *
- * **Exactly one parameter, and that is measured rather than chosen.** With two
- * (`?mode=rwc&foreign_keys=on`) the JVM driver applied the pragma but kept the rest of the query
- * string in the *file name*: the database landed on disk as `local.db?mode=rwc`. One parameter
- * leaves the path alone. So the file is created by us instead — see [ensureDatabaseFile] — which
- * is what `mode=rwc` was there for.
+ * The JVM driver also keeps a second parameter inside the **file name**: with
+ * `?mode=rwc&foreign_keys=on` the database landed on disk as `local.db?mode=rwc`. `mode=rwc` is
+ * gone too, and the file is created by [ensureDatabaseFile] instead — one behaviour on both
+ * platforms rather than two drivers' worth of query-string parsing.
  */
-internal fun sqliteUrl(databasePath: String): String = "sqlite://$databasePath?foreign_keys=on"
+internal fun sqliteUrl(databasePath: String): String = "sqlite://$databasePath"
 
 /**
  * The pool's settings.

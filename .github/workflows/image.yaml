@@ -34,6 +34,22 @@ jobs:
       contents: read
       packages: write
 
+    # Two distributions, two images, one set of rules for naming them. They differ by the storage
+    # they were built against and by nothing else — which is exactly why they must not drift in how
+    # they are tagged or when they are pushed.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: distribution
+            binary: shildik.kexe
+            image: shildik
+            description: OpenID Connect provider — reference distribution
+          - module: distribution-sqlite
+            binary: shildik-sqlite.kexe
+            image: shildik-sqlite
+            description: OpenID Connect provider — reference distribution, storing its state in SQLite
+
     steps:
       - uses: actions/checkout@v7
 
@@ -60,7 +76,7 @@ jobs:
           LATEST: ${{ inputs.latest }}
           # Empty on a manual run. `inputs` are empty on a tag push, so the two never both speak.
           TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          REPO: ghcr.io/${{ github.repository }}
+          REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
         run: |
           # A tag names its own version: `v0.2.0.13` becomes `0.2.0.13`. Reading `inputs` on this
           # event would silently produce an image with only a commit tag — a release nobody can
@@ -80,7 +96,7 @@ jobs:
       # Gradle builds the binary and assembles the context; docker only builds. Compiling inside
       # the Dockerfile would throw away the Gradle cache on every run.
       - name: Assemble the image context
-        run: ./gradlew :distribution:imageContext --console=plain
+        run: ./gradlew :${{ matrix.module }}:imageContext --console=plain
 
       - name: Log in to ghcr
         uses: docker/login-action@v4
@@ -97,14 +113,14 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: distribution/build/image
+          context: ${{ matrix.module }}/build/image
           platforms: linux/amd64
           push: true
-          build-args: BINARY=shildik.kexe
+          build-args: BINARY=${{ matrix.binary }}
           tags: ${{ steps.tags.outputs.value }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=OpenID Connect provider — reference distribution
+            org.opencontainers.image.description=${{ matrix.description }}
             org.opencontainers.image.licenses=MIT
 
       # The image is the thing people deploy, so the run says what it produced rather than leaving

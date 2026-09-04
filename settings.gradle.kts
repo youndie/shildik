@@ -54,3 +54,7 @@ include(":cli")
 // A distribution, and the only module here that is an application rather than a library: it exists
 // so the repository can be run rather than only read.
 include(":distribution")
+// The same distribution on SQLite. A module of its own rather than a second binary in the one
+// above: two executables in one module would share its dependencies, and both images would carry
+// both database drivers.
+include(":distribution-sqlite")

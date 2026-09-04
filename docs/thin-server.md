@@ -165,6 +165,30 @@ curl -X POST localhost:9000/admin/tenants -H 'Authorization: Bearer bootstrap' \
 
 The second port is published here only because this is a laptop. In a cluster it is not.
 
+On SQLite there is nothing to start beside it, and `:distribution-sqlite` is the same reference
+build against `storage-sqlx4k-sqlite`:
+
+```bash
+./gradlew :distribution-sqlite:image
+
+docker run -d --name idp -p 8080:8080 -p 9000:9000 -v shildik:/data \
+  -e SHILDIK_ISSUER=http://127.0.0.1:8080 \
+  -e SHILDIK_MASTER_KEYS=change-me \
+  -e SHILDIK_DB_PATH=/data/shildik.db \
+  -e SHILDIK_BOOTSTRAP_TOKEN=bootstrap \
+  shildik-sqlite:0.2.0
+```
+
+That image is 46 MB, starts in 0.035 s, and answers discovery, issues a service token and serves
+JWKS — checked under qemu on an ARM laptop, restart included: the tenant, the client and the
+signing key were all still there afterwards.
+
+**Backing that volume up is not `cp` of one file.** The driver runs SQLite in WAL mode, so the
+database is three files — `shildik.db`, `-wal` and `-shm` — and the newest writes live in the WAL
+until a checkpoint. A copy of the first one alone, taken from a running provider, is a database
+missing whatever happened recently. Copy all three with the process stopped, or let SQLite make the
+copy (`VACUUM INTO`).
+
 For your own build the context is three things and nothing else — the Dockerfile, the binary, and
 the schema. Take the schema out of the storage artifact rather than keeping a copy: it is inside
 `storage-sqlx4k-jvm.jar` under `migrations/`, and a second copy of a schema drifts from the first
