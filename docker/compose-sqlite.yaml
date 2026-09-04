@@ -8,6 +8,11 @@
 services:
   shildik:
     image: ghcr.io/youndie/shildik-sqlite:latest
+    # The image is linux/amd64 only — one Kotlin/Native target, one link (see .github/workflows/image.yaml).
+    # `docker run` falls back to emulation on an arm64 host with a warning; compose refuses the pull
+    # outright ("no matching manifest for linux/arm64/v8"), so the platform is stated here. On an
+    # Apple Silicon laptop this runs under qemu: slower to start, fine for trying the provider out.
+    platform: linux/amd64
     environment:
       # Must equal the address a client reaches — it goes into every token as `iss`, and clients
       # compare it with what discovery says.
