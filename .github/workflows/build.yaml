@@ -43,6 +43,12 @@ jobs:
       # Rendered with the trial database on, because that half is otherwise never exercised.
       - run: helm template idp charts/shildik --set issuer=https://id.example.com --set database.jdbcUrl=jdbc:postgresql://pg:5432/shildik --set ingress.host=id.example.com --set postgres.enabled=true > /dev/null
 
+      - run: helm lint charts/shildik-sqlite --set issuer=https://id.example.com --set ingress.host=id.example.com
+
+      # Both paths through the volume: the claim this chart creates, and one somebody else manages.
+      - run: helm template idp charts/shildik-sqlite --set issuer=https://id.example.com --set ingress.host=id.example.com > /dev/null
+      - run: helm template idp charts/shildik-sqlite --set issuer=https://id.example.com --set ingress.host=id.example.com --set storage.existingClaim=mine > /dev/null
+
       # The guards are part of the contract: a chart that installs without an issuer produces a
       # provider whose tokens no client accepts, and the failure surfaces hours later.
       - name: Required values are required
@@ -51,3 +57,15 @@ jobs:
             echo "chart rendered without issuer or jdbcUrl — the guards are gone" >&2
             exit 1
           fi
+          if helm template idp charts/shildik-sqlite > /dev/null 2>&1; then
+            echo "the sqlite chart rendered without an issuer — the guard is gone" >&2
+            exit 1
+          fi
+
+      # A single replica is the whole safety argument of the SQLite chart: one writer, one file.
+      # A values file cannot raise it, and neither can a careless edit to the template.
+      - name: One replica, and a rollout that stops before it starts
+        run: |
+          rendered=$(helm template idp charts/shildik-sqlite --set issuer=https://id.example.com --set ingress.host=id.example.com)
+          echo "$rendered" | grep -q 'replicas: 1' || { echo "the sqlite deployment no longer says replicas: 1" >&2; exit 1; }
+          echo "$rendered" | grep -q 'type: Recreate' || { echo "the sqlite deployment lost its Recreate strategy" >&2; exit 1; }

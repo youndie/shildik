@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "shildik.fullname" . }}
+  labels: {{- include "shildik.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector: {{- include "shildik.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: public
+      port: {{ .Values.ports.public }}
+      targetPort: public
+    # In the service but not in the ingress: reachable from inside the cluster for a CLI in a pod
+    # or a port-forward, and absent from the public network.
+    - name: management
+      port: {{ .Values.ports.management }}
+      targetPort: management

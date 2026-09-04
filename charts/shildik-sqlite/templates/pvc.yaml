@@ -1,0 +1,26 @@
+{{- if not .Values.storage.existingClaim }}
+# The whole installation, in one volume: tenants, clients, users, and the signing keys the tokens
+# are verified against. Losing it is not "restore from the database" — there is no other copy.
+#
+# `ReadWriteOnce` is not a limitation to work around. It is the same statement the deployment makes
+# with one replica: a SQLite file has one writer, and a volume that two pods could mount would let
+# a mistake in a values file corrupt it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "shildik.fullname" . }}-data
+  labels: {{- include "shildik.labels" . | nindent 4 }}
+  annotations:
+    # The claim outlives `helm uninstall`. Deleting the release must not delete the identities of
+    # everyone who can sign in; removing the volume is a separate, deliberate `kubectl delete pvc`.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.storage.className }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.size }}
+{{- end }}

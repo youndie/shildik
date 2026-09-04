@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shildik.fullname" . }}
+  labels: {{- include "shildik.labels" . | nindent 4 }}
+spec:
+  # **One, and not a value.** The state is a file on a `ReadWriteOnce` volume: a second pod either
+  # fails to mount it or, on a storage class that allows sharing, corrupts it. See values.yaml.
+  replicas: 1
+  # `Recreate`, not the default rolling update. A rolling update starts the new pod before stopping
+  # the old one — which is exactly the two-pods-one-file case, and on most clusters it does not
+  # fail loudly: the new pod sits `ContainerCreating` on a volume it cannot mount until the
+  # rollout times out. The trade is stated plainly: a few seconds where nobody can sign in.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {{- include "shildik.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "shildik.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: shildik
+          image: {{ include "shildik.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: public
+              containerPort: {{ .Values.ports.public }}
+            - name: management
+              containerPort: {{ .Values.ports.management }}
+          env:
+            - name: SHILDIK_ISSUER
+              value: {{ required "issuer is required: it goes into every token and clients compare it with discovery" .Values.issuer | quote }}
+            - name: SHILDIK_PORT
+              value: {{ .Values.ports.public | quote }}
+            - name: SHILDIK_MANAGEMENT_PORT
+              value: {{ .Values.ports.management | quote }}
+            # The database is a path, and this is the value that makes this build a SQLite one:
+            # start-up reads it to decide that no database account is needed.
+            - name: SHILDIK_DB_PATH
+              value: {{ printf "%s/%s" (.Values.storage.path | trimSuffix "/") .Values.storage.filename | quote }}
+            - name: SHILDIK_MASTER_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: {{ .Values.secret.masterKeysKey }}
+            {{- if .Values.secret.bootstrapTokenKey }}
+            - name: SHILDIK_BOOTSTRAP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: {{ .Values.secret.bootstrapTokenKey }}
+            {{- end }}
+            - name: SHILDIK_RELEASE
+              value: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.storage.path | quote }}
+          # Two probes answering two questions. Liveness deliberately does not touch the database:
+          # hang it on there and a locked file restarts the pod that holds the lock. Readiness does
+          # — a provider whose database it cannot read hands out neither tokens nor keys.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: management
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: management
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 2
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.storage.existingClaim | default (printf "%s-data" (include "shildik.fullname" .)) }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
