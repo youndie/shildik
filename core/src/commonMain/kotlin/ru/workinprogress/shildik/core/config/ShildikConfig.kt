@@ -21,6 +21,16 @@ data class ShildikConfig(
     val dbPassword: String = "",
     /** The bootstrap token: when unset, it is generated at start-up (research §R8). */
     val bootstrapToken: String? = null,
+    /**
+     * The path to a SQLite database, for an installation that runs on one.
+     *
+     * `null` means Postgres, and that is the only thing the two storages disagree about in a
+     * configuration: a file has a path, a server has an address and an account. It is here rather
+     * than read by a distribution from its own environment variable so that the name of that
+     * variable lives in one place — the start-up code stops demanding a database user and password
+     * exactly when this is set, and it cannot do that if it does not know.
+     */
+    val databasePath: String? = null,
 ) {
     /**
      * The token that is actually accepted. When none is given from outside, a random one for this

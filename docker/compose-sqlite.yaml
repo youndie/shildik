@@ -1,0 +1,32 @@
+# The provider alone — no database to run beside it.
+#
+# The counterpart of `compose.yaml`, which brings a PostgreSQL up next to the provider. Here the
+# state is one file on a volume, so this file has one service and starts in a second.
+#
+# Both ports are published because there is nobody else on this machine to protect them from. In a
+# cluster the management port stays inside — see charts/shildik.
+services:
+  shildik:
+    image: ghcr.io/youndie/shildik-sqlite:latest
+    environment:
+      # Must equal the address a client reaches — it goes into every token as `iss`, and clients
+      # compare it with what discovery says.
+      SHILDIK_ISSUER: http://127.0.0.1:8080
+      # The file. There is no default: a database inside the container's own filesystem is a
+      # database that disappears with the container.
+      SHILDIK_DB_PATH: /data/shildik.db
+      SHILDIK_MIGRATIONS: /app/migrations
+      # A real installation takes this from a secret store and rotates it. Here it is a string in
+      # a file, which is exactly why this file is not a deployment.
+      SHILDIK_MASTER_KEYS: change-me
+      SHILDIK_BOOTSTRAP_TOKEN: bootstrap
+    volumes:
+      - shildik-data:/data
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+
+volumes:
+  # Named, not a bind mount: this is where every tenant, client, user and signing key lives, and a
+  # `docker compose down -v` takes all of it.
+  shildik-data:

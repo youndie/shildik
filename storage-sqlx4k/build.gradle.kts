@@ -5,22 +5,18 @@ plugins {
     id("ru.workinprogress.sborka.publish")
 }
 
-// One storage for **every build**: on the JVM and on native alike.
+// PostgreSQL: the driver, the schema, and the lock migrations take.
 //
-// It appeared for native's sake (JDBC is a JVM interface, not a protocol, and Exposed does not
-// travel there) but replaced Exposed entirely. The order was: first the replacement was checked by
-// the same tests on the JVM, then the platform changed, and only once both installations ran on
+// The storage appeared for native's sake (JDBC is a JVM interface, not a protocol, and Exposed does
+// not travel there) but replaced Exposed entirely. The order was: first the replacement was checked
+// by the same tests on the JVM, then the platform changed, and only once both installations ran on
 // native was the second adapter removed — keeping it would have meant testing one thing and
 // shipping another.
+//
+// **The coordinates are unchanged on purpose.** Everything a consumer imports from here it still
+// gets from here: `storage-sqlx4k-core` arrives through `api`, so `sqlx4kStorageModule` and the
+// repositories are where they were, and the split is invisible to a build that wanted Postgres.
 kotlin {
-    // OPTED IN OUT LOUD. `newFixedThreadPoolContext` is delicate because the pool it creates has to
-    // be closed by hand; this one lives for the process, which is the case the documentation calls
-    // acceptable. The conventions compile with `allWarningsAsErrors`, so it is said here rather than
-    // produced on every build and read by nobody.
-    compilerOptions {
-        optIn.add("kotlinx.coroutines.DelicateCoroutinesApi")
-    }
-
     jvm()
 
     // This target is why the module exists: JDBC is a JVM interface, not a protocol, and Exposed
@@ -29,10 +25,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":core"))
+            // The repositories, the query helpers and the migration runner live there; what is
+            // here is the driver, the schema and the advisory lock only Postgres has.
+            api(project(":storage-sqlx4k-core"))
             implementation(libs.sqlx4k.postgres)
-            // We read the migration files **ourselves** — `Migrations.kt` explains why.
-            implementation(libs.kotlinx.io)
             implementation(libs.koin.core)
         }
         commonTest.dependencies {

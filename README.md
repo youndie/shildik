@@ -26,7 +26,9 @@ installation, not a provider.
 |---|---|
 | `core` | the domain: tenants, clients, users, codes, tokens, signing keys |
 | `server` | the HTTP layer — the OIDC contour, the admin API, the sign-in page |
-| `storage-sqlx4k` | PostgreSQL behind the domain's ports, on the JVM and on native alike |
+| `storage-sqlx4k-core` | the domain's ports over sqlx4k — repositories, queries, migrations, no driver |
+| `storage-sqlx4k` | PostgreSQL: the driver, the schema, the lock migrations take |
+| `storage-sqlx4k-sqlite` | SQLite: one file, one instance, no database to operate |
 | `shared` | the admin API wire: addresses as Ktor resources, models |
 | `auth-password` | sign-in by password: PBKDF2, attempt counting, lock-out |
 | `auth-google` | sign-in through Google |
@@ -34,6 +36,7 @@ installation, not a provider.
 | `cli` | a native `shildik` binary for the management port |
 | `server-boot` | shared start-up: the environment, the configuration, both engines |
 | `distribution` | a reference `main()` — the thing the published image is built from |
+| `distribution-sqlite` | the same reference build on SQLite, and its image |
 
 Assembling a distribution is the consumer's `main()` — the recipe is
 [docs/thin-server.md](docs/thin-server.md):
@@ -154,9 +157,9 @@ which of them a given provider serves is its business, and the libraries no long
 ## Targets
 
 `jvm`, `linuxX64`, `linuxArm64` and `macosArm64`, with four exceptions: `ktor-role-based-auth` is
-JVM, because Ktor's authentication plugin is; `storage-sqlx4k` and `server-boot` are JVM and
-`linuxX64`, which is what the database driver publishes; `distribution` is `linuxX64` alone,
-because it exists to become a container.
+JVM, because Ktor's authentication plugin is; the three storage modules and `server-boot` are JVM
+and `linuxX64`, which is what the database drivers publish; the distributions are `linuxX64`
+alone, because they exist to become containers.
 
 The fourth goes the other way. `shared-oidc` adds `wasmJs`, because a browser is a client of this
 provider like any other and the addresses are the whole point of the module: without that target a
@@ -184,7 +187,19 @@ curl -X POST localhost:8080/realms/main/protocol/openid-connect/token \
 
 The image is `ghcr.io/youndie/shildik` — 44 MB, `linux/amd64`, the reference distribution with
 every sign-in method compiled in. Its tags name releases: a version like `0.2.0.13`, the commit it
-was built from as `sha-a62db6d`, and `latest` for the newest release. In a cluster there is a chart:
+was built from as `sha-a62db6d`, and `latest` for the newest release.
+
+**There is a second image, and it needs no database at all.** `ghcr.io/youndie/shildik-sqlite`
+(46 MB) is the same distribution built on `storage-sqlx4k-sqlite`: one file on a volume instead of
+a PostgreSQL to operate, tagged by the same rules. What it costs is a second replica — one SQLite
+file cannot be shared by two pods — so it is for an installation that runs a single instance and
+takes a moment of downtime on deploy.
+
+```bash
+docker compose -f docker/compose-sqlite.yaml up -d
+```
+
+In a cluster there is a chart:
 
 ```bash
 helm install idp oci://ghcr.io/youndie/charts/shildik \

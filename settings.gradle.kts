@@ -39,7 +39,15 @@ include(":oidc-auth-server")
 // its own decision, and assembling them is the consumer's `main()`.
 include(":shared")
 include(":core")
+// The storage in three modules: what both databases share, and a module per driver. The split
+// is forced by linking rather than chosen for tidiness — two of sqlx4k's drivers in one native
+// binary define the same Rust symbols and fail at the linker.
+include(":storage-sqlx4k-core")
 include(":storage-sqlx4k")
+// The second storage, and a module of its own for the same reason a sign-in method is: a build
+// that does not depend on it cannot be pointed at SQLite by a setting, and the Postgres
+// installations carry no second driver.
+include(":storage-sqlx4k-sqlite")
 include(":server")
 include(":auth-password")
 include(":auth-google")
@@ -50,3 +58,7 @@ include(":cli")
 // A distribution, and the only module here that is an application rather than a library: it exists
 // so the repository can be run rather than only read.
 include(":distribution")
+// The same distribution on SQLite. A module of its own rather than a second binary in the one
+// above: two executables in one module would share its dependencies, and both images would carry
+// both database drivers.
+include(":distribution-sqlite")
