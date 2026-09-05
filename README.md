@@ -231,15 +231,15 @@ repositories {
 
 dependencies {
     // The provider
-    implementation("ru.workinprogress.shildik:server:$version")
-    implementation("ru.workinprogress.shildik:storage-sqlx4k:$version")
-    implementation("ru.workinprogress.shildik:auth-password:$version")
+    implementation("io.github.youndie.shildik:server:$version")
+    implementation("io.github.youndie.shildik:storage-sqlx4k:$version")
+    implementation("io.github.youndie.shildik:auth-password:$version")
 
     // The libraries a consuming service needs
-    implementation("ru.workinprogress.shildik:crypto:$version")
-    implementation("ru.workinprogress.shildik:ktor-role-based-auth:$version")
-    implementation("ru.workinprogress.shildik:oidc-auth-client:$version")
-    implementation("ru.workinprogress.shildik:oidc-auth-server:$version")
+    implementation("io.github.youndie.shildik:crypto:$version")
+    implementation("io.github.youndie.shildik:ktor-role-based-auth:$version")
+    implementation("io.github.youndie.shildik:oidc-auth-client:$version")
+    implementation("io.github.youndie.shildik:oidc-auth-server:$version")
 }
 ```
 

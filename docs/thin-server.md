@@ -41,9 +41,9 @@ kotlin {
         }
     }
     sourceSets.linuxX64Main.dependencies {
-        implementation("ru.workinprogress.shildik:server-boot:$shildik")
-        implementation("ru.workinprogress.shildik:storage-sqlx4k:$shildik")
-        implementation("ru.workinprogress.shildik:auth-password:$shildik")
+        implementation("io.github.youndie.shildik:server-boot:$shildik")
+        implementation("io.github.youndie.shildik:storage-sqlx4k:$shildik")
+        implementation("io.github.youndie.shildik:auth-password:$shildik")
         implementation("io.ktor:ktor-server-cio:$ktor")
     }
 }
@@ -71,7 +71,7 @@ fun main() =
 ```
 
 ```kotlin
-implementation("ru.workinprogress.shildik:storage-sqlx4k-sqlite:$shildik")
+implementation("io.github.youndie.shildik:storage-sqlx4k-sqlite:$shildik")
 ```
 
 The ports, the repositories and the SQL are the same ones — `storage-sqlx4k-sqlite` supplies a
