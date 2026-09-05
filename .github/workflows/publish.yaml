@@ -23,13 +23,14 @@ jobs:
           konan-cache: "true"
 
 
-      # The version is `0.2.0.<run number>`: monotonic, traceable back to a run, and impossible to
-      # produce twice by accident. See the root build for why the line starts at 0.2.
+      # The version is `0.3.0.<run number>`: monotonic, traceable back to a run, and impossible to
+      # produce twice by accident. See `gradle.properties` for what each step of the line marks —
+      # the head is spelled there too, and the two move together.
       - name: Publish to snapshots
         # The repository is named `wip` by the shared convention; it was `reposilite` here. Same
         # server, same credentials — and they arrive as ORG_GRADLE_PROJECT_ properties now, because
         # that is how the convention reads them.
-        run: ./gradlew publishAllPublicationsToWipRepository -PVERSION=0.2.0.${{ github.run_number }}
+        run: ./gradlew publishAllPublicationsToWipRepository -PVERSION=0.3.0.${{ github.run_number }}
         env:
           ORG_GRADLE_PROJECT_REPOSILITE_USER: ${{ secrets.REPOSILITE_USER }}
           ORG_GRADLE_PROJECT_REPOSILITE_SECRET: ${{ secrets.REPOSILITE_SECRET }}
