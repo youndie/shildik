@@ -58,6 +58,10 @@ internal class Provider(
         )
     }
 
+    @Suppress(
+        "ktlint:kapkan:wall-clock",
+        "фикстура теста строит момент относительно сейчас",
+    )
     suspend fun token(
         clientId: String = "billing",
         roles: Set<String> = setOf("orders:read"),

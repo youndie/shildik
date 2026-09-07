@@ -65,6 +65,10 @@ class Sqlx4kKeyRepository(
         kid: String,
         state: KeyState,
     ) {
+        @Suppress(
+            "ktlint:kapkan:wall-clock",
+            "момент вывода ключа из оборота ставит сервер и сверяет с ним же",
+        )
         val statement =
             if (state == KeyState.RETIRING) {
                 sql(

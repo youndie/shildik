@@ -29,6 +29,10 @@ internal interface KeySource {
  * provider). The compromise: refetch, but no more often than [minRefetch]. `jwks-rsa` has no such
  * protection by default.
  */
+@Suppress(
+    "ktlint:kapkan:wall-clock",
+    "`now` и есть порт: часы входят одним умолчанием, тесты подставляют свои",
+)
 internal class JwksSource(
     private val client: HttpClient,
     // A function rather than a string: the address is asked of the provider (see

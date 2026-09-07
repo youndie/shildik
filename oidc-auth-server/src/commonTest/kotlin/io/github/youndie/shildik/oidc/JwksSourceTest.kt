@@ -12,6 +12,10 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /** The key cache: how often the provider is asked, and when it stops being asked. */
+@Suppress(
+    "ktlint:kapkan:wall-clock",
+    "фикстура теста строит момент относительно сейчас",
+)
 class JwksSourceTest {
     private val provider = Provider("provider-key", "https://provider.test")
 
@@ -30,6 +34,10 @@ class JwksSourceTest {
             assertEquals(1, provider.calls)
         }
 
+    @Suppress(
+        "ktlint:kapkan:wall-clock",
+        "фикстура теста строит момент относительно сейчас",
+    )
     @Test
     fun `after a day the keys are refetched`() =
         runTest {
@@ -43,6 +51,10 @@ class JwksSourceTest {
             assertEquals(2, provider.calls)
         }
 
+    @Suppress(
+        "ktlint:kapkan:wall-clock",
+        "фикстура теста строит момент относительно сейчас",
+    )
     @Test
     fun `an unknown kid does not turn into a JWKS fetch per request`() =
         runTest {
@@ -88,6 +100,10 @@ class JwksSourceTest {
             assertNotNull(source.key(provider.kid))
         }
 
+    @Suppress(
+        "ktlint:kapkan:wall-clock",
+        "фикстура теста строит момент относительно сейчас",
+    )
     @Test
     fun `refetching happens at most once every ten seconds`() =
         runTest {

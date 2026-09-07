@@ -59,6 +59,10 @@ class MasterKeyCipher(
     }
 
     /** Whether a record is already encrypted with the current key, so re-encryption can skip it. */
+    @Suppress(
+        "ktlint:kapkan:swallowed-failure",
+        "не расшифровалось текущим ключом — это и есть ответ `false`, а не потерянная ошибка",
+    )
     suspend fun isCurrent(cipherText: ByteArray): Boolean =
         try {
             cipher(rawKeys.first()).decrypt(cipherText)
