@@ -18,7 +18,7 @@ kotlin {
 kotlin {
     linuxX64 {
         binaries.executable {
-            entryPoint = "ru.workinprogress.shildik.distribution.main"
+            entryPoint = "io.github.youndie.shildik.distribution.main"
             baseName = "shildik"
         }
     }

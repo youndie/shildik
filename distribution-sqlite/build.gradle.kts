@@ -20,7 +20,7 @@ kotlin {
 kotlin {
     linuxX64 {
         binaries.executable {
-            entryPoint = "ru.workinprogress.shildik.distribution.sqlite.main"
+            entryPoint = "io.github.youndie.shildik.distribution.sqlite.main"
             baseName = "shildik-sqlite"
         }
     }
