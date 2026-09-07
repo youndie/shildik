@@ -47,6 +47,10 @@ class TokenVerifierTest {
             val token = provider.token(expiresIn = 5.minutes)
 
             // The verifier's clock is moved rather than the token: that is how it looks in production.
+            @Suppress(
+                "ktlint:kapkan:wall-clock",
+                "фикстура теста строит момент относительно сейчас",
+            )
             val late =
                 TokenVerifier(
                     JwksSource(HttpClient(jwksEngine(provider)), jwksUrl = { provider.certs }),

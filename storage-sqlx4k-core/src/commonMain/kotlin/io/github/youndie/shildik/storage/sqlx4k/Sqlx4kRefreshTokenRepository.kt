@@ -53,6 +53,10 @@ class Sqlx4kRefreshTokenRepository(
             }
 
     /** The marking is conditional: whoever loses the race gets zero rows, and that is a race, not a leak. */
+    @Suppress(
+        "ktlint:kapkan:wall-clock",
+        "метку хранения ставит сервер и читает её сам",
+    )
     override suspend fun markUsed(
         tenantId: TenantId,
         tokenHash: String,

@@ -36,6 +36,10 @@ class VerifiedToken internal constructor(
  * `aud` is not checked either: Keycloak-shaped providers put `account` there, and no meaningful
  * check comes out of it.
  */
+@Suppress(
+    "ktlint:kapkan:wall-clock",
+    "`now` и есть порт: часы входят одним умолчанием, тесты подставляют свои",
+)
 internal class TokenVerifier(
     private val keys: KeySource,
     private val skew: Duration = 60.seconds,

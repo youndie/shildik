@@ -30,6 +30,10 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Clock
 import kotlinx.serialization.json.Json as KotlinJson
 
+@Suppress(
+    "ktlint:kapkan:wall-clock",
+    "клиент решает, не пора ли обновить токен, по своим часам — на провод это не идёт",
+)
 private fun now(): Long = Clock.System.now().toEpochMilliseconds()
 
 /** A minute before expiry: a token with seconds left on it is useless to whoever receives it. */
