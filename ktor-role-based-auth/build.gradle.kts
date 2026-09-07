@@ -1,8 +1,8 @@
 plugins {
     id("org.jetbrains.kotlin.jvm")
-    id("ru.workinprogress.sborka.jvm")
-    id("ru.workinprogress.sborka.lint")
-    id("ru.workinprogress.sborka.publish")
+    id("io.github.youndie.sborka.jvm")
+    id("io.github.youndie.sborka.lint")
+    id("io.github.youndie.sborka.publish")
 }
 
 dependencies {
@@ -12,7 +12,7 @@ dependencies {
     implementation(ktorLibs.server.auth)
     implementation(ktorLibs.server.core)
 
-    // `kotlin-test` is not declared here any more: `ru.workinprogress.sborka.jvm` puts it on the
+    // `kotlin-test` is not declared here any more: `io.github.youndie.sborka.jvm` puts it on the
     // test classpath, version-managed by the Kotlin plugin. Declaring it here as well is the same
     // module with two different version constraints, and neither resolves.
     testImplementation(ktorLibs.server.testHost)

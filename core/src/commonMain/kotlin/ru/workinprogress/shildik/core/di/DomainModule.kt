@@ -53,15 +53,19 @@ fun domainModule(): Module =
         // distribution is assembled rather than "discovered" by reflection (research §R5). It is
         // overridden by the module that brings one.
         single { AuthMethodRegistry() }
-        singleOf(::AuthorizeUseCase)
+        // THE CLOCK IS LEFT TO ITS DEFAULT, WHICH IS WHY THESE ARE NOT `singleOf`.
+        //
+        // `singleOf` resolves **every** constructor parameter, including those with defaults, and
+        // fails when no Clock definition exists. The note used to stand over `RefreshTokensUseCase`
+        // alone, because it was the only use case here that took a clock; the other four took the
+        // machine's. Now that they take the port too, the note is about all five.
+        single { AuthorizeUseCase(get(), get(), get(), get(), get(), get()) }
         single { IssueUserTokensUseCase(get(), get()) }
         single { VerifyOwnTokenUseCase(get()) }
-        singleOf(::ExchangeCodeUseCase)
-        // The clock is passed explicitly: `singleOf` resolves **every** constructor parameter,
-        // including those with defaults, and fails when no Clock definition exists.
+        single { ExchangeCodeUseCase(get(), get(), get(), get(), get(), get()) }
         single { RefreshTokensUseCase(get(), get(), get(), get(), get()) }
-        singleOf(::StartAuthorizationUseCase)
-        singleOf(::CompleteAuthorizationUseCase)
+        single { StartAuthorizationUseCase(get(), get(), get(), get()) }
+        single { CompleteAuthorizationUseCase(get(), get(), get()) }
         single { SubmitLoginUseCase(get(), get(), get(), get()) }
         singleOf(::EndSessionUseCase)
         singleOf(::ListUsersUseCase)

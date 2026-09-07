@@ -62,6 +62,7 @@ class AuthorizeUseCase(
     private val codes: AuthorizationCodeRepository,
     private val methods: AuthMethodRegistry,
     private val transactions: TransactionManager,
+    private val clock: Clock = Clock.System,
 ) : UseCase<AuthorizeUseCase.Params, IssuedCode> {
     override suspend fun invoke(params: Params): Result<IssuedCode> =
         suspendRunCatching {
@@ -119,7 +120,7 @@ class AuthorizeUseCase(
                         codeChallenge = params.codeChallenge,
                         scope = params.scope,
                         nonce = params.nonce,
-                        expiresAt = Clock.System.now() + CODE_TTL,
+                        expiresAt = clock.now() + CODE_TTL,
                     ),
                 )
 
@@ -228,6 +229,7 @@ class StartAuthorizationUseCase(
     private val clients: ClientRepository,
     private val pending: PendingAuthorizationRepository,
     private val methods: AuthMethodRegistry,
+    private val clock: Clock = Clock.System,
 ) : UseCase<StartAuthorizationUseCase.Params, StartedAuthorization> {
     override suspend fun invoke(params: Params): Result<StartedAuthorization> =
         suspendRunCatching {
@@ -279,7 +281,7 @@ class StartAuthorizationUseCase(
                     nonce = params.nonce,
                     codeChallenge = params.codeChallenge,
                     methodId = method.id,
-                    expiresAt = Clock.System.now() + PENDING_TTL,
+                    expiresAt = clock.now() + PENDING_TTL,
                 ),
             )
 
@@ -322,6 +324,7 @@ class CompleteAuthorizationUseCase(
     private val tenants: TenantRepository,
     private val pending: PendingAuthorizationRepository,
     private val authorize: AuthorizeUseCase,
+    private val clock: Clock = Clock.System,
 ) : UseCase<CompleteAuthorizationUseCase.Params, IssuedCode> {
     override suspend fun invoke(params: Params): Result<IssuedCode> =
         suspendRunCatching {
@@ -330,7 +333,7 @@ class CompleteAuthorizationUseCase(
                 pending.take(tenant.id, params.state)
                     ?: throw OAuthRejection("invalid_request", "the request is unknown or stale")
 
-            if (stored.expiresAt <= Clock.System.now()) {
+            if (stored.expiresAt <= clock.now()) {
                 throw OAuthRejection("invalid_request", "the request is stale")
             }
 
@@ -378,6 +381,7 @@ class ExchangeCodeUseCase(
     private val codes: AuthorizationCodeRepository,
     private val refreshTokens: RefreshTokenRepository,
     private val transactions: TransactionManager,
+    private val clock: Clock = Clock.System,
 ) : UseCase<ExchangeCodeUseCase.Params, ExchangedCode> {
     override suspend fun invoke(params: Params): Result<ExchangedCode> =
         suspendRunCatching {
@@ -393,7 +397,7 @@ class ExchangeCodeUseCase(
             // Everything below answers with the same error outwards: differences in the answers
             // would otherwise reveal which code exists.
             if (stored.used) throw OAuthRejection("invalid_grant", "the code was already used")
-            if (stored.expiresAt <= Clock.System.now()) throw OAuthRejection("invalid_grant", "the code expired")
+            if (stored.expiresAt <= clock.now()) throw OAuthRejection("invalid_grant", "the code expired")
             if (stored.clientId !=
                 client.clientId
             ) {
@@ -429,7 +433,7 @@ class ExchangeCodeUseCase(
                                     clientId = client.clientId,
                                     userId = user.id,
                                     scope = stored.scope,
-                                    expiresAt = Clock.System.now() + RefreshTokensUseCase.REFRESH_TTL,
+                                    expiresAt = clock.now() + RefreshTokensUseCase.REFRESH_TTL,
                                 ),
                             )
                         }

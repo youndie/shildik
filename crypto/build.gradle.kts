@@ -1,8 +1,8 @@
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
-    id("ru.workinprogress.sborka.kmp")
-    id("ru.workinprogress.sborka.lint")
-    id("ru.workinprogress.sborka.publish")
+    id("io.github.youndie.sborka.kmp")
+    id("io.github.youndie.sborka.lint")
+    id("io.github.youndie.sborka.publish")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
@@ -28,7 +28,7 @@ kotlin {
             implementation(libs.cryptography.provider.openssl3)
         }
         commonTest.dependencies {
-            // `kotlin-test` is not declared here any more: `ru.workinprogress.sborka.kmp` puts it on
+            // `kotlin-test` is not declared here any more: `io.github.youndie.sborka.kmp` puts it on
             // `commonTest`, version-managed by the Kotlin plugin. Declaring it here as well is the
             // SAME module with two different version constraints, and the metadata compilation then
             // resolves neither — `Unresolved reference 'Test'` on a dependency that is plainly listed.

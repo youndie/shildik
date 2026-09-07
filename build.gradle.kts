@@ -14,7 +14,7 @@ plugins {
 
 // The group, the version, the toolchain, the ktlint wiring, the test logging and the whole
 // publishing block used to live here, in `allprojects` and `subprojects`. They come from
-// `ru.workinprogress.sborka` now, applied per module — and the numbers behind them are one line each
+// `io.github.youndie.sborka` now, applied per module — and the numbers behind them are one line each
 // in `gradle.properties`, with the reasons written beside them rather than around the code that used
 // to read them.
 //
