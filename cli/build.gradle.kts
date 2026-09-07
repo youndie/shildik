@@ -20,7 +20,7 @@ kotlin {
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
         binaries {
             executable {
-                entryPoint = "ru.workinprogress.shildik.cli.main"
+                entryPoint = "io.github.youndie.shildik.cli.main"
                 baseName = "shildik"
             }
 

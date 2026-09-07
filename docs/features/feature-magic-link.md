@@ -50,7 +50,7 @@ This is safe exactly as far as the sign-in method **proves** ownership of the em
 does prove it: the letter went to that address and the code came back from it.
 
 The proof is a property of **this sign-in**, not of the method
-([`AuthenticatedSubject.emailVerified`](../../core/src/commonMain/kotlin/ru/workinprogress/shildik/core/feature/auth/AuthMethod.kt)).
+([`AuthenticatedSubject.emailVerified`](../../core/src/commonMain/kotlin/io/github/youndie/shildik/core/feature/auth/AuthMethod.kt)).
 It used to be a property of the method, and that was wrong: Google does not always verify an email
 — it has an `email_verified` field and it is sometimes `false`. A property of the method would
 answer "yes" for those answers too.
