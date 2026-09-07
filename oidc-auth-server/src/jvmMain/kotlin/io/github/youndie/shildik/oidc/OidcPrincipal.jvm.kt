@@ -2,9 +2,9 @@ package io.github.youndie.shildik.oidc
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.interfaces.Payload
+import io.github.youndie.shildik.auth.RoleBasedPrincipal
 import io.ktor.server.auth.jwt.JWTPrincipal
 import kotlinx.serialization.json.JsonObject
-import io.github.youndie.shildik.auth.RoleBasedPrincipal
 
 /**
  * The principal on the JVM, with the same surface a `jwks-rsa`-based build had.

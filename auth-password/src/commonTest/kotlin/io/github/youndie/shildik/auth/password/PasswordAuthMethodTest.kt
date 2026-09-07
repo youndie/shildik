@@ -1,6 +1,5 @@
 package io.github.youndie.shildik.auth.password
 
-import kotlinx.coroutines.test.runTest
 import io.github.youndie.shildik.core.feature.auth.AuthRequest
 import io.github.youndie.shildik.core.model.ExternalIdentity
 import io.github.youndie.shildik.core.model.LoginAttempt
@@ -12,6 +11,7 @@ import io.github.youndie.shildik.core.port.LoginAttemptRepository
 import io.github.youndie.shildik.core.port.TenantRepository
 import io.github.youndie.shildik.core.port.UserRepository
 import io.github.youndie.shildik.crypto.Passwords
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

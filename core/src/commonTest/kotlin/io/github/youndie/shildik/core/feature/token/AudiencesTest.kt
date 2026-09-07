@@ -1,9 +1,9 @@
 package io.github.youndie.shildik.core.feature.token
 
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonPrimitive
 import io.github.youndie.shildik.core.model.Client
 import io.github.youndie.shildik.core.model.TenantId
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

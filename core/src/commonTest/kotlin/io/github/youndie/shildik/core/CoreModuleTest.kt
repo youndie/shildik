@@ -1,11 +1,11 @@
 package io.github.youndie.shildik.core
 
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import io.github.youndie.shildik.core.config.ShildikConfig
 import io.github.youndie.shildik.core.di.IssuerResolver
 import io.github.youndie.shildik.core.di.coreModule
 import io.github.youndie.shildik.core.port.TransactionManager
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

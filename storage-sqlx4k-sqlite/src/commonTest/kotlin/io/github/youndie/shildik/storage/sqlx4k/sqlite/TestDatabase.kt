@@ -1,10 +1,10 @@
 package io.github.youndie.shildik.storage.sqlx4k.sqlite
 
 import io.github.smyrgeorge.sqlx4k.Driver
+import io.github.youndie.shildik.storage.sqlx4k.migrateUnlocked
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import io.github.youndie.shildik.storage.sqlx4k.migrateUnlocked
 
 /**
  * A database per test, in a file.

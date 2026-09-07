@@ -1,5 +1,6 @@
 package io.github.youndie.shildik.auth.google
 
+import io.github.youndie.shildik.core.feature.auth.AuthRequest
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -7,7 +8,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
-import io.github.youndie.shildik.core.feature.auth.AuthRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

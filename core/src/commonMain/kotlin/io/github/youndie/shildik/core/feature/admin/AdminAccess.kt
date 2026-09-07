@@ -1,10 +1,10 @@
 package io.github.youndie.shildik.core.feature.admin
 
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import io.github.youndie.shildik.core.port.ClientRepository
 import io.github.youndie.shildik.core.port.TenantRepository
 import io.github.youndie.shildik.crypto.Secrets
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Access to the management contour (research §R8).

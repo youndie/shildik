@@ -1,5 +1,6 @@
 package io.github.youndie.shildik.oidc
 
+import io.github.youndie.shildik.shared.RealmResource
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.resources.href
@@ -11,7 +12,6 @@ import io.ktor.server.application.log
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.bearer
 import kotlinx.serialization.json.JsonObject
-import io.github.youndie.shildik.shared.RealmResource
 
 const val JWT_AUTH_OIDC = "jwt-auth-oidc"
 

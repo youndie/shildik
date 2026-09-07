@@ -1,10 +1,10 @@
 package io.github.youndie.shildik.core.feature
 
-import kotlinx.coroutines.test.runTest
 import io.github.youndie.shildik.core.feature.auth.AuthMethod
 import io.github.youndie.shildik.core.feature.auth.AuthMethodRegistry
 import io.github.youndie.shildik.core.feature.auth.AuthRequest
 import io.github.youndie.shildik.core.feature.auth.AuthenticatedSubject
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

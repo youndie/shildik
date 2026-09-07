@@ -1,8 +1,8 @@
 package io.github.youndie.shildik.oidc
 
-import kotlinx.coroutines.test.runTest
 import io.github.youndie.shildik.crypto.SigningKey
 import io.github.youndie.shildik.crypto.VerificationKey
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

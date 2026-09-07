@@ -1,5 +1,11 @@
 package io.github.youndie.shildik.server
 
+import io.github.youndie.shildik.core.config.ShildikConfig
+import io.github.youndie.shildik.core.di.coreModule
+import io.github.youndie.shildik.core.di.domainModule
+import io.github.youndie.shildik.core.feature.admin.AdminAccess
+import io.github.youndie.shildik.server.admin.adminRoutes
+import io.github.youndie.shildik.server.oidc.oidcRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -15,12 +21,6 @@ import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
-import io.github.youndie.shildik.core.config.ShildikConfig
-import io.github.youndie.shildik.core.di.coreModule
-import io.github.youndie.shildik.core.di.domainModule
-import io.github.youndie.shildik.core.feature.admin.AdminAccess
-import io.github.youndie.shildik.server.admin.adminRoutes
-import io.github.youndie.shildik.server.oidc.oidcRoutes
 
 /**
  * Two engines rather than one with two connectors.

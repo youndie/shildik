@@ -1,14 +1,14 @@
 package io.github.youndie.shildik.server.boot
 
-import io.ktor.server.application.Application
-import org.koin.core.module.Module
-import org.koin.core.scope.Scope
-import org.koin.dsl.module
 import io.github.youndie.shildik.core.config.ShildikConfig
 import io.github.youndie.shildik.core.feature.auth.AuthMethod
 import io.github.youndie.shildik.core.feature.auth.AuthMethodRegistry
 import io.github.youndie.shildik.server.ErrorReporter
 import io.github.youndie.shildik.server.shildikServer
+import io.ktor.server.application.Application
+import org.koin.core.module.Module
+import org.koin.core.scope.Scope
+import org.koin.dsl.module
 
 /**
  * Starting a distribution.

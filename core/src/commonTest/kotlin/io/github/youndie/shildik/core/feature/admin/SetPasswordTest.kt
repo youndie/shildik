@@ -1,6 +1,5 @@
 package io.github.youndie.shildik.core.feature.admin
 
-import kotlinx.coroutines.test.runTest
 import io.github.youndie.shildik.core.feature.browser.FakeCredentials
 import io.github.youndie.shildik.core.feature.browser.FakeTenants
 import io.github.youndie.shildik.core.feature.browser.FakeUsers
@@ -8,6 +7,7 @@ import io.github.youndie.shildik.core.model.Tenant
 import io.github.youndie.shildik.core.model.TenantId
 import io.github.youndie.shildik.core.model.User
 import io.github.youndie.shildik.crypto.Passwords
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

@@ -1,8 +1,8 @@
 package io.github.youndie.shildik.server.oidc
 
-import io.ktor.http.HttpStatusCode
 import io.github.youndie.shildik.core.feature.admin.NotFound
 import io.github.youndie.shildik.core.feature.browser.OAuthRejection
+import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

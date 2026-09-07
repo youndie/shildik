@@ -1,11 +1,11 @@
 package io.github.youndie.shildik.server.oidc
 
-import io.ktor.http.HttpStatusCode
 import io.github.youndie.shildik.core.feature.admin.NotFound
 import io.github.youndie.shildik.core.feature.browser.OAuthRejection
 import io.github.youndie.shildik.core.feature.token.InvalidClient
 import io.github.youndie.shildik.core.feature.token.UnknownResource
 import io.github.youndie.shildik.core.feature.token.UnknownScope
+import io.ktor.http.HttpStatusCode
 
 /**
  * How to answer a failure in the OIDC contour — and what to report while doing so.

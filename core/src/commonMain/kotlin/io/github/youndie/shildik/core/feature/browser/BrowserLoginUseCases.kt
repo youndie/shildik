@@ -1,6 +1,5 @@
 package io.github.youndie.shildik.core.feature.browser
 
-import kotlinx.serialization.json.JsonPrimitive
 import io.github.youndie.shildik.core.feature.admin.NotFound
 import io.github.youndie.shildik.core.feature.auth.AuthMethod
 import io.github.youndie.shildik.core.feature.auth.AuthMethodRegistry
@@ -30,6 +29,7 @@ import io.github.youndie.shildik.core.usecase.UseCase
 import io.github.youndie.shildik.core.usecase.suspendRunCatching
 import io.github.youndie.shildik.crypto.Pkce
 import io.github.youndie.shildik.crypto.Secrets
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes

@@ -1,12 +1,12 @@
 package io.github.youndie.shildik.core.di
 
-import org.koin.core.module.Module
-import org.koin.core.module.dsl.singleOf
-import org.koin.dsl.module
 import io.github.youndie.shildik.core.config.ShildikConfig
 import io.github.youndie.shildik.core.port.NoopTransactionManager
 import io.github.youndie.shildik.core.port.TransactionManager
 import io.github.youndie.shildik.crypto.MasterKeyCipher
+import org.koin.core.module.Module
+import org.koin.core.module.dsl.singleOf
+import org.koin.dsl.module
 
 /**
  * The domain graph. Configuration arrives from outside: `:core` does not know where it was taken

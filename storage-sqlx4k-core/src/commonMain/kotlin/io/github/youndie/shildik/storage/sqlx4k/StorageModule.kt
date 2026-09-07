@@ -1,7 +1,5 @@
 package io.github.youndie.shildik.storage.sqlx4k
 
-import org.koin.core.module.Module
-import org.koin.dsl.module
 import io.github.youndie.shildik.core.port.AuthorizationCodeRepository
 import io.github.youndie.shildik.core.port.ClientRepository
 import io.github.youndie.shildik.core.port.CredentialRepository
@@ -13,6 +11,8 @@ import io.github.youndie.shildik.core.port.StorageHealth
 import io.github.youndie.shildik.core.port.TenantRepository
 import io.github.youndie.shildik.core.port.TransactionManager
 import io.github.youndie.shildik.core.port.UserRepository
+import org.koin.core.module.Module
+import org.koin.dsl.module
 
 /**
  * The ports, with no driver among them.

@@ -1,5 +1,7 @@
 package io.github.youndie.shildik.cli
 
+import io.github.youndie.shildik.shared.ExternalIdentityView
+import io.github.youndie.shildik.shared.ImportUserRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
@@ -16,8 +18,6 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import io.github.youndie.shildik.shared.ExternalIdentityView
-import io.github.youndie.shildik.shared.ImportUserRequest
 
 /**
  * Reading users out of the previous provider.

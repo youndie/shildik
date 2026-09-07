@@ -1,12 +1,12 @@
 package io.github.youndie.shildik.server
 
+import io.github.youndie.shildik.core.port.StorageHealth
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import kotlinx.serialization.Serializable
-import io.github.youndie.shildik.core.port.StorageHealth
 
 @Serializable
 data class HealthResponse(

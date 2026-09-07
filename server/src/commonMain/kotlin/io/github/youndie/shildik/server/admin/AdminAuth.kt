@@ -1,11 +1,11 @@
 package io.github.youndie.shildik.server.admin
 
+import io.github.youndie.shildik.core.feature.admin.AdminAccess
+import io.github.youndie.shildik.shared.ErrorView
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.request.header
 import io.ktor.server.response.respond
-import io.github.youndie.shildik.core.feature.admin.AdminAccess
-import io.github.youndie.shildik.shared.ErrorView
 
 class AdminAuthConfig {
     var access: AdminAccess? = null

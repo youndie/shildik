@@ -1,5 +1,6 @@
 package io.github.youndie.shildik.oidc
 
+import io.github.youndie.shildik.shared.RealmResource
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -24,7 +25,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import io.github.youndie.shildik.shared.RealmResource
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Clock

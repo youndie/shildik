@@ -1,6 +1,5 @@
 package io.github.youndie.shildik.core.feature.browser
 
-import kotlinx.coroutines.test.runTest
 import io.github.youndie.shildik.core.feature.auth.AuthMethodRegistry
 import io.github.youndie.shildik.core.feature.auth.AuthenticatedSubject
 import io.github.youndie.shildik.core.model.Client
@@ -8,6 +7,7 @@ import io.github.youndie.shildik.core.model.ExternalIdentity
 import io.github.youndie.shildik.core.model.Tenant
 import io.github.youndie.shildik.core.model.TenantId
 import io.github.youndie.shildik.core.model.User
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

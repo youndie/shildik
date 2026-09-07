@@ -1,5 +1,7 @@
 package io.github.youndie.shildik.oidc
 
+import io.github.youndie.shildik.crypto.Jws
+import io.github.youndie.shildik.crypto.SigningKey
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
@@ -10,8 +12,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import io.github.youndie.shildik.crypto.Jws
-import io.github.youndie.shildik.crypto.SigningKey
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes

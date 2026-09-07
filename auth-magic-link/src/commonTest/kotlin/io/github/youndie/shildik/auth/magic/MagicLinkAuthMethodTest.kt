@@ -1,7 +1,7 @@
 package io.github.youndie.shildik.auth.magic
 
-import kotlinx.coroutines.test.runTest
 import io.github.youndie.shildik.core.feature.auth.AuthRequest
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

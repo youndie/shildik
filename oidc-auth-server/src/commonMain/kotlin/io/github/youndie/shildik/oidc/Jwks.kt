@@ -1,11 +1,11 @@
 package io.github.youndie.shildik.oidc
 
+import io.github.youndie.shildik.crypto.VerificationKey
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import io.github.youndie.shildik.crypto.VerificationKey
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours

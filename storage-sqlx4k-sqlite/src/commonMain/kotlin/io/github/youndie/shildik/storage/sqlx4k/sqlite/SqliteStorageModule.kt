@@ -1,13 +1,13 @@
 package io.github.youndie.shildik.storage.sqlx4k.sqlite
 
 import io.github.smyrgeorge.sqlx4k.Driver
+import io.github.youndie.shildik.core.config.ShildikConfig
+import io.github.youndie.shildik.storage.sqlx4k.migrateUnlocked
+import io.github.youndie.shildik.storage.sqlx4k.sqlx4kPorts
 import kotlinx.coroutines.runBlocking
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.dsl.onClose
-import io.github.youndie.shildik.core.config.ShildikConfig
-import io.github.youndie.shildik.storage.sqlx4k.migrateUnlocked
-import io.github.youndie.shildik.storage.sqlx4k.sqlx4kPorts
 
 /**
  * Assembling the storage on SQLite — the same ports the Postgres adapter offers.

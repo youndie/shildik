@@ -1,5 +1,8 @@
 package io.github.youndie.shildik.auth.google
 
+import io.github.youndie.shildik.core.feature.auth.AuthRequest
+import io.github.youndie.shildik.core.feature.auth.AuthenticatedSubject
+import io.github.youndie.shildik.core.feature.auth.RedirectingAuthMethod
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
@@ -16,9 +19,6 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import io.github.youndie.shildik.core.feature.auth.AuthRequest
-import io.github.youndie.shildik.core.feature.auth.AuthenticatedSubject
-import io.github.youndie.shildik.core.feature.auth.RedirectingAuthMethod
 
 /**
  * Signing in through Google.

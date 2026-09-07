@@ -1,8 +1,5 @@
 package io.github.youndie.shildik.core.di
 
-import org.koin.core.module.Module
-import org.koin.core.module.dsl.singleOf
-import org.koin.dsl.module
 import io.github.youndie.shildik.core.feature.admin.AdminAccess
 import io.github.youndie.shildik.core.feature.admin.CreateClientUseCase
 import io.github.youndie.shildik.core.feature.admin.CreateTenantUseCase
@@ -34,6 +31,9 @@ import io.github.youndie.shildik.core.feature.keys.GetJwksUseCase
 import io.github.youndie.shildik.core.feature.token.IssueServiceTokenUseCase
 import io.github.youndie.shildik.core.feature.token.IssueUserTokensUseCase
 import io.github.youndie.shildik.core.feature.token.VerifyOwnTokenUseCase
+import org.koin.core.module.Module
+import org.koin.core.module.dsl.singleOf
+import org.koin.dsl.module
 
 /** The domain's use cases. Ports arrive from the storage module — no implementations here. */
 fun domainModule(): Module =

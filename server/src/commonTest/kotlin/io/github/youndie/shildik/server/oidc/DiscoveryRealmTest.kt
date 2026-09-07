@@ -1,12 +1,5 @@
 package io.github.youndie.shildik.server.oidc
 
-import io.ktor.client.request.get
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.testing.testApplication
-import org.koin.dsl.koinApplication
-import org.koin.dsl.module
 import io.github.youndie.shildik.core.config.ShildikConfig
 import io.github.youndie.shildik.core.di.coreModule
 import io.github.youndie.shildik.core.di.domainModule
@@ -24,6 +17,13 @@ import io.github.youndie.shildik.core.port.TenantRepository
 import io.github.youndie.shildik.core.port.UserRepository
 import io.github.youndie.shildik.server.ErrorReporter
 import io.github.youndie.shildik.server.publicModule
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.testing.testApplication
+import org.koin.dsl.koinApplication
+import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

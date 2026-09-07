@@ -1,8 +1,5 @@
 package io.github.youndie.shildik.core.feature.token
 
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import io.github.youndie.shildik.core.di.IssuerResolver
 import io.github.youndie.shildik.core.feature.keys.ActiveSigningKey
 import io.github.youndie.shildik.core.port.ClientRepository
@@ -11,6 +8,9 @@ import io.github.youndie.shildik.core.usecase.UseCase
 import io.github.youndie.shildik.core.usecase.suspendRunCatching
 import io.github.youndie.shildik.crypto.Jws
 import io.github.youndie.shildik.crypto.Secrets
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 

@@ -1,9 +1,9 @@
 package io.github.youndie.shildik.core.feature.token
 
+import io.github.youndie.shildik.core.model.Client
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import io.github.youndie.shildik.core.model.Client
 
 /**
  * Which resource a token is addressed to (RFC 8707).

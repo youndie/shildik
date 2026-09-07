@@ -1,12 +1,12 @@
 package io.github.youndie.shildik.core.feature.token
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import io.github.youndie.shildik.core.di.IssuerResolver
 import io.github.youndie.shildik.core.feature.keys.ActiveSigningKey
 import io.github.youndie.shildik.core.model.Tenant
 import io.github.youndie.shildik.core.model.User
 import io.github.youndie.shildik.crypto.Jws
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Clock
 
 /**

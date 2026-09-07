@@ -1,5 +1,6 @@
 package io.github.youndie.shildik.oidc
 
+import io.github.youndie.shildik.shared.RealmResource
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -10,7 +11,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import io.github.youndie.shildik.shared.RealmResource
 
 /**
  * Where the provider keeps its keys — asked, not assumed.
