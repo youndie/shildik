@@ -63,6 +63,11 @@ public object Passwords {
         if (parts.size != 4 || parts[0] != ALGORITHM) return false
 
         val iterations = parts[1].toIntOrNull() ?: return false
+
+        @Suppress(
+            "ktlint:kapkan:cancellation-swallowed",
+            "декодирование base64 синхронное, точки приостановки внутри нет",
+        )
         val salt = runCatching { parts[2].decodeBase64Url() }.getOrNull() ?: return false
 
         val actual = derive(password, salt, iterations).encodeBase64Url()

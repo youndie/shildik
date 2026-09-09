@@ -89,6 +89,10 @@ class KeycloakSourceTest {
                     }
                 }
 
+            @Suppress(
+                "ktlint:kapkan:cancellation-swallowed",
+                "тест ловит бросок, который и проверяет; эту область никто не отменяет",
+            )
             val failure = runCatching { source(engine).users() }.exceptionOrNull()
 
             // An empty list would mean "nobody to import" — the quietest way to lose everyone.

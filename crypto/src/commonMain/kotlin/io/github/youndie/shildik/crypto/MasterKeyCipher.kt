@@ -4,6 +4,7 @@ import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.SHA256
 import dev.whyoleg.cryptography.random.CryptographyRandom
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Encrypting private signing keys with master keys taken from the environment.
@@ -47,6 +48,11 @@ public class MasterKeyCipher(
         for (key in rawKeys) {
             try {
                 return cipher(key).decrypt(cipherText)
+            } catch (e: CancellationException) {
+                // Отмена — не «ключ не подошёл». Без этого отменённая расшифровка досчитывала цикл
+                // до конца и бросала «ни один из N мастер-ключей не подходит»: диагноз про
+                // конфигурацию там, где с ключами всё в порядке.
+                throw e
             } catch (e: Throwable) {
                 lastFailure = e
             }
@@ -67,6 +73,8 @@ public class MasterKeyCipher(
         try {
             cipher(rawKeys.first()).decrypt(cipherText)
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Throwable) {
             false
         }

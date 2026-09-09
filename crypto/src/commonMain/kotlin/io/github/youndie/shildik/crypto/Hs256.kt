@@ -30,6 +30,10 @@ public object Hs256 {
         val parts = token.split('.')
         if (parts.size != 3) return null
 
+        @Suppress(
+            "ktlint:kapkan:cancellation-swallowed",
+            "HMAC считается на месте: провайдер suspend по сигнатуре, но не приостанавливается",
+        )
         return runCatching {
             val key = hmac.keyDecoder(SHA256).decodeFromByteArray(HMAC.Key.Format.RAW, secret.encodeToByteArray())
             val signingInput = "${parts[0]}.${parts[1]}".encodeToByteArray()

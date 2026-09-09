@@ -27,6 +27,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlinx.serialization.json.Json as KotlinJson
 
@@ -138,8 +139,14 @@ private class TokenEndpoint(
         return mutex.withLock {
             discovered?.let { return@withLock it }
 
+            // Отмена — не «дискавери не ответил»: без этого отменённый запрос молча уводил в
+            // запасной путь, как если бы провайдер оказался недоступен.
+            @Suppress(
+                "ktlint:kapkan:swallowed-failure",
+                "недоступное дискавери и есть повод взять составленный адрес, а не отказать",
+            )
             val fromDiscovery =
-                runCatching {
+                try {
                     val body =
                         client
                             .get(config.url.trimEnd('/') + href(ResourcesFormat(), config.discoveryResource()))
@@ -148,7 +155,11 @@ private class TokenEndpoint(
                         ?.let { it as? JsonPrimitive }
                         ?.content
                         ?.takeIf { it.isNotBlank() }
-                }.getOrNull()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Throwable) {
+                    null
+                }
 
             fromDiscovery?.also { discovered = it } ?: composed
         }
