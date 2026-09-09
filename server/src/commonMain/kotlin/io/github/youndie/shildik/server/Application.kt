@@ -30,19 +30,19 @@ import org.koin.dsl.module
  * confirmed (api/endpoint-admin.md §4). With a shared engine and one routing tree this would have
  * to be enforced by a check on every route, that is, by hoping nobody forgets it.
  */
-class ShildikServer(
+public class ShildikServer(
     private val application: KoinApplication,
     private val public: EmbeddedServer<*, *>,
     private val management: EmbeddedServer<*, *>,
 ) {
-    val koin: Koin get() = application.koin
+    public val koin: Koin get() = application.koin
 
-    fun start(wait: Boolean = false) {
+    public fun start(wait: Boolean = false) {
         management.start(wait = false)
         public.start(wait = wait)
     }
 
-    fun stop() {
+    public fun stop() {
         public.stop()
         management.stop()
         // We close **our own** container, not the global one: other servers did not ask for it.
@@ -61,7 +61,7 @@ class ShildikServer(
  * @param observability is attached to the public contour. It is a parameter because it lives in
  *   `jvmMain` (katcher and metrik are JVM libraries) while the server is assembled in shared code.
  */
-fun shildikServer(
+public fun shildikServer(
     config: ShildikConfig,
     storage: Module,
     observability: Application.() -> Unit = {},
@@ -119,7 +119,7 @@ private fun Application.commonPlugins() {
 }
 
 /** The public contour: token, certs, discovery and health. No management handles here. */
-fun Application.publicModule(koin: Koin) {
+public fun Application.publicModule(koin: Koin) {
     commonPlugins()
     healthRoutes(koin.get())
     oidcRoutes(koin)
@@ -130,7 +130,7 @@ fun Application.publicModule(koin: Koin) {
  * in its final place instead of moving there later — a move would have meant that for some time the
  * management handles lived on the public port.
  */
-fun Application.managementModule(koin: Koin) {
+public fun Application.managementModule(koin: Koin) {
     commonPlugins()
     healthRoutes(koin.get())
     adminRoutes(koin)

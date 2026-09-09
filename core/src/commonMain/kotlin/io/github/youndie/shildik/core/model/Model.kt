@@ -9,7 +9,7 @@ import kotlin.time.Instant
  * Inside the domain the term differs deliberately: in a B2B IdP this is a tenant, while `realm` is
  * another product's word that we keep in URLs only for compatibility.
  */
-data class Tenant(
+public data class Tenant(
     val id: TenantId,
     val realm: String,
     /**
@@ -27,15 +27,15 @@ data class Tenant(
 )
 
 @JvmInline
-value class TenantId(
-    val value: String,
+public value class TenantId(
+    public val value: String,
 )
 
 /**
  * A client is a program, not a person. The secret is stored **only** as a hash: `secretHash` is
  * what lies in the database, and it does not unfold back (api/endpoint-admin.md §3).
  */
-data class Client(
+public data class Client(
     val tenantId: TenantId,
     val clientId: String,
     val secretHash: String,
@@ -83,11 +83,11 @@ data class Client(
         }
     }
 
-    fun allowsRedirect(uri: String): Boolean = uri in redirectUris
+    public fun allowsRedirect(uri: String): Boolean = uri in redirectUris
 
-    fun allowsAudience(resource: String): Boolean = resource in audiences
+    public fun allowsAudience(resource: String): Boolean = resource in audiences
 
-    fun allowsScope(scope: String): Boolean = scope in scopes
+    public fun allowsScope(scope: String): Boolean = scope in scopes
 }
 
 /**
@@ -97,7 +97,7 @@ data class Client(
  * It lives in storage rather than in memory: a pod restarts between the redirect and the exchange,
  * and a lost code looks like "sign-in works every other time" (api/protocol-oidc-browser.md §4).
  */
-data class AuthorizationCode(
+public data class AuthorizationCode(
     val tenantId: TenantId,
     val codeHash: String,
     val clientId: String,
@@ -123,7 +123,7 @@ data class AuthorizationCode(
  * `CredentialRepository`. A password field added "just in case" is a field somebody will fill in
  * one day.
  */
-data class User(
+public data class User(
     val tenantId: TenantId,
     val id: String,
     val email: String?,
@@ -144,7 +144,7 @@ data class User(
  * `provider` is a short key (`google`) rather than an address: addresses change, and tying a
  * person's identity to them is the very mistake that made `(sub, iss)` something to untangle.
  */
-data class ExternalIdentity(
+public data class ExternalIdentity(
     val provider: String,
     val subject: String,
 ) {
@@ -161,7 +161,7 @@ data class ExternalIdentity(
  * in memory means losing sign-ins on every rollout, so it goes to storage, like the authorization
  * code.
  */
-data class PendingAuthorization(
+public data class PendingAuthorization(
     val tenantId: TenantId,
     val state: String,
     val clientId: String,
@@ -186,7 +186,7 @@ data class PendingAuthorization(
  * is revoked, not only the presented token. A user will survive signing in again; quietly
  * continuing to issue tokens to whoever presented something stolen is not survivable.
  */
-data class RefreshToken(
+public data class RefreshToken(
     val tenantId: TenantId,
     val tokenHash: String,
     val family: String,
@@ -205,9 +205,9 @@ data class RefreshToken(
  * `RETIRING` exists only for somebody else's JWKS cache: clients hold keys for a day, and a key
  * removed right after a rotation breaks verification silently (feature-signing-keys §3).
  */
-enum class KeyState { ACTIVE, RETIRING, RETIRED }
+public enum class KeyState { ACTIVE, RETIRING, RETIRED }
 
-data class SigningKeyRecord(
+public data class SigningKeyRecord(
     val tenantId: TenantId,
     val kid: String,
     val privateKeyDer: ByteArray,
@@ -232,11 +232,11 @@ data class SigningKeyRecord(
  * The key is the pair "tenant and the login that was typed", not the user: non-existent addresses
  * get guessed too, and a difference in behaviour would make them visible.
  */
-data class LoginAttempt(
+public data class LoginAttempt(
     val tenantId: TenantId,
     val login: String,
     val failures: Int,
     val lockedUntil: Instant?,
 ) {
-    fun locked(now: Instant): Boolean = lockedUntil != null && now < lockedUntil
+    public fun locked(now: Instant): Boolean = lockedUntil != null && now < lockedUntil
 }

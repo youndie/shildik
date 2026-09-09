@@ -9,7 +9,7 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class HealthResponse(
+public data class HealthResponse(
     val status: String,
 )
 
@@ -27,7 +27,7 @@ data class HealthResponse(
  * hang without an answer while `/health` kept answering 200: the pod counted as healthy while
  * serving nothing (BACKLOG M-69).
  */
-fun Application.healthRoutes(storage: StorageHealth) {
+public fun Application.healthRoutes(storage: StorageHealth) {
     routing {
         get("/health") {
             call.respond(HttpStatusCode.OK, HealthResponse("ok"))

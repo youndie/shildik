@@ -9,7 +9,7 @@ import io.github.youndie.shildik.crypto.SigningKey
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 
-class UnknownRealm(
+public class UnknownRealm(
     realm: String,
 ) : Exception("Unknown realm: $realm")
 
@@ -20,7 +20,7 @@ class UnknownRealm(
  * JWKS for 24 hours, and a key that vanishes right after a rotation breaks verification silently
  * (feature-signing-keys §3).
  */
-class GetJwksUseCase(
+public class GetJwksUseCase(
     private val tenants: TenantRepository,
     private val keys: KeyRepository,
     private val activeKey: ActiveSigningKey,

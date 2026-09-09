@@ -49,7 +49,7 @@ internal expect suspend fun <T> bounded(block: suspend () -> T): T
 internal val QUERY_TIMEOUT = 10.seconds
 
 /** Our own failure, not a refusal by protocol: the OIDC surface answers 500 and reports it. */
-class StorageUnavailable(
+public class StorageUnavailable(
     message: String,
 ) : RuntimeException(message)
 

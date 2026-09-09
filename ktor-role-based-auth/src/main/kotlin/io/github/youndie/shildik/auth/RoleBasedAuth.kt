@@ -1,6 +1,7 @@
 package io.github.youndie.shildik.auth
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.RouteScopedPlugin
 import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.auth.AuthenticationChecked
 import io.ktor.server.auth.authentication
@@ -11,7 +12,7 @@ import io.ktor.server.routing.RouteSelectorEvaluation
 import io.ktor.server.routing.RoutingResolveContext
 import io.ktor.util.AttributeKey
 
-typealias Role = String
+public typealias Role = String
 
 /**
  * What the plugin asks of a principal, and the whole of it.
@@ -20,12 +21,12 @@ typealias Role = String
  * that can name its roles is enough — whether it came from a JWT, a session or an API key is the
  * authentication provider's business.
  */
-interface RoleBasedPrincipal {
-    val roles: Set<Role>
+public interface RoleBasedPrincipal {
+    public val roles: Set<Role>
 }
 
 /** How the required roles are matched against the ones the caller actually has. */
-enum class AuthType {
+public enum class AuthType {
     /** Every required role must be present. */
     ALL,
 
@@ -36,13 +37,13 @@ enum class AuthType {
     NONE,
 }
 
-class RoleBasedAuthConfiguration {
-    var requiredRoles: Set<Role> = emptySet()
-    var authType: AuthType = AuthType.ALL
+public class RoleBasedAuthConfiguration {
+    public var requiredRoles: Set<Role> = emptySet()
+    public var authType: AuthType = AuthType.ALL
 }
 
 /** Why a request was refused. Read it from `call.attributes` in a status page or a log. */
-val AuthorizationErrorKey = AttributeKey<List<String>>("AuthorizationError")
+public val AuthorizationErrorKey: AttributeKey<List<String>> = AttributeKey("AuthorizationError")
 
 /**
  * Route-scoped authorization: it runs after authentication and answers 403 when the roles do not
@@ -59,7 +60,7 @@ val AuthorizationErrorKey = AttributeKey<List<String>>("AuthorizationError")
  * **known** caller may do; whether an unknown caller is let in at all is what `optional` decides.
  * There is a test pinning this, so it is a documented property rather than a surprise.
  */
-val RoleBasedAuthorization =
+public val RoleBasedAuthorization: RouteScopedPlugin<RoleBasedAuthConfiguration> =
     createRouteScopedPlugin(
         name = "RoleBasedAuthorization",
         createConfiguration = ::RoleBasedAuthConfiguration,
@@ -101,41 +102,41 @@ val RoleBasedAuthorization =
     }
 
 /** Routes inside require [role]. */
-fun Route.withRole(
+public fun Route.withRole(
     role: Role,
     build: Route.() -> Unit,
-) = withRoles(role, build = build)
+): Route = withRoles(role, build = build)
 
 /** Routes inside require **all** of [roles]. */
-fun Route.withRoles(
+public fun Route.withRoles(
     vararg roles: Role,
     build: Route.() -> Unit,
-) = authorizedRoute(roles.toSet(), AuthType.ALL, build)
+): Route = authorizedRoute(roles.toSet(), AuthType.ALL, build)
 
 /** Routes inside require **any one** of [roles]. */
-fun Route.withAnyRole(
+public fun Route.withAnyRole(
     vararg roles: Role,
     build: Route.() -> Unit,
-) = authorizedRoute(roles.toSet(), AuthType.ANY, build)
+): Route = authorizedRoute(roles.toSet(), AuthType.ANY, build)
 
 /** Routes inside are refused to anyone holding any of [roles]. */
-fun Route.withoutRoles(
+public fun Route.withoutRoles(
     vararg roles: Role,
     build: Route.() -> Unit,
-) = authorizedRoute(roles.toSet(), AuthType.NONE, build)
+): Route = authorizedRoute(roles.toSet(), AuthType.NONE, build)
 
 /**
  * The selector exists for the route tree to be readable: without it every authorized route prints
  * as an anonymous child, and `/orders` guarded by two different role sets looks like one route
  * twice.
  */
-class AuthorizedRouteSelector(
+public class AuthorizedRouteSelector(
     private val description: String,
 ) : RouteSelector() {
     override suspend fun evaluate(
         context: RoutingResolveContext,
         segmentIndex: Int,
-    ) = RouteSelectorEvaluation.Constant
+    ): RouteSelectorEvaluation = RouteSelectorEvaluation.Constant
 
     override fun toString(): String = "Authorized(roles=$description)"
 }

@@ -11,4 +11,4 @@ import platform.posix.getenv
  * here, and telling them apart would invent a third for nothing.
  */
 @OptIn(ExperimentalForeignApi::class)
-actual fun optional(name: String): String? = getenv(name)?.toKString()?.takeIf { it.isNotBlank() }
+public actual fun optional(name: String): String? = getenv(name)?.toKString()?.takeIf { it.isNotBlank() }

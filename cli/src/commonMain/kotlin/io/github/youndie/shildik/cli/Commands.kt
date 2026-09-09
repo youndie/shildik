@@ -18,13 +18,13 @@ import kotlinx.coroutines.runBlocking
  * The root command. The URL and the token are shared by every subcommand: they say **where** and
  * **with what**, not what to do.
  */
-class Shildik : NoOpCliktCommand(name = "shildik") {
-    override fun help(context: com.github.ajalt.clikt.core.Context) =
+public class Shildik : NoOpCliktCommand(name = "shildik") {
+    override fun help(context: com.github.ajalt.clikt.core.Context): String =
         "Manage shildik. The management contour listens on a separate port and is never exposed — " +
             "run this from somewhere that can reach it."
 }
 
-abstract class ApiCommand(
+public abstract class ApiCommand(
     name: String,
 ) : CliktCommand(name = name) {
     private val url by option("--url", envvar = "SHILDIK_URL", help = "Management port URL")
@@ -39,7 +39,7 @@ abstract class ApiCommand(
     private val outputFormat by option("--output", envvar = "SHILDIK_OUTPUT", help = "human | json")
         .choice("human", "json")
         .default("human")
-    protected val tenant by option("--tenant", envvar = "SHILDIK_TENANT").default("main")
+    protected val tenant: String by option("--tenant", envvar = "SHILDIK_TENANT").default("main")
 
     protected val out: Output get() = if (outputFormat == "json") JsonOutput() else TerminalOutput()
 
@@ -71,21 +71,21 @@ abstract class ApiCommand(
     }
 }
 
-class TenantList : ApiCommand("list") {
-    override fun run() =
+public class TenantList : ApiCommand("list") {
+    override fun run(): Unit =
         run { api ->
             out.table(listOf("realm"), api.listTenants().map { listOf(it.realm) })
         }
 }
 
-class TenantCreate : ApiCommand("create") {
+public class TenantCreate : ApiCommand("create") {
     private val realm by argument("realm")
 
     // A closed tenant is created by an explicit flag: a contour that admits only provisioned
     // people is a decision, not a default somebody forgot about (feature-closed-registration).
     private val closed by option("--closed", help = "admit provisioned users only").flag()
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val tenant = api.createTenant(realm, registrationOpen = !closed)
             out.record(
@@ -97,8 +97,8 @@ class TenantCreate : ApiCommand("create") {
         }
 }
 
-class ClientList : ApiCommand("list") {
-    override fun run() =
+public class ClientList : ApiCommand("list") {
+    override fun run(): Unit =
         run { api ->
             out.table(
                 // The third column means different things for different clients, hence the
@@ -115,14 +115,14 @@ class ClientList : ApiCommand("list") {
         }
 }
 
-class ClientAudiences : ApiCommand("audiences") {
+public class ClientAudiences : ApiCommand("audiences") {
     private val clientId by argument("clientId")
     private val audiences by option(
         "--audience",
         help = "Resource this client may hold a token for, repeatable",
     ).multiple()
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val updated = api.setAudiences(tenant, clientId, audiences)
             out.record(
@@ -135,11 +135,11 @@ class ClientAudiences : ApiCommand("audiences") {
         }
 }
 
-class ClientScopes : ApiCommand("scopes") {
+public class ClientScopes : ApiCommand("scopes") {
     private val clientId by argument("clientId")
     private val scopes by option("--scope", help = "Permission this client may hold, repeatable").multiple()
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val updated = api.setScopes(tenant, clientId, scopes)
             out.record(
@@ -152,7 +152,7 @@ class ClientScopes : ApiCommand("scopes") {
         }
 }
 
-class ClientCreate : ApiCommand("create") {
+public class ClientCreate : ApiCommand("create") {
     private val clientId by argument("clientId")
     private val roles by option("--role", help = "Client role, repeatable").multiple()
 
@@ -178,7 +178,7 @@ class ClientCreate : ApiCommand("create") {
      */
     private val scopes by option("--scope", help = "Permission this client may hold, repeatable").multiple()
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val created = api.createClient(tenant, clientId, roles, public, redirectUris, audiences, scopes)
             val secret = created.secret
@@ -196,10 +196,10 @@ class ClientCreate : ApiCommand("create") {
         }
 }
 
-class ClientRotateSecret : ApiCommand("rotate-secret") {
+public class ClientRotateSecret : ApiCommand("rotate-secret") {
     private val clientId by argument("clientId")
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val secret = api.rotateSecret(tenant, clientId).secret
             // A public client has no secret — there is nothing to rotate, and a silent "null"
@@ -215,10 +215,10 @@ class ClientRotateSecret : ApiCommand("rotate-secret") {
  * in the shell history. The command exists for the migration — so that the switch comes down to a
  * single ingress and no service has to be touched at all (deploy.md §4a).
  */
-class ClientImportSecret : ApiCommand("import-secret") {
+public class ClientImportSecret : ApiCommand("import-secret") {
     private val clientId by argument("clientId")
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val secret = readlnOrNull()?.trim().orEmpty()
             if (secret.isEmpty()) {
@@ -239,10 +239,10 @@ class ClientImportSecret : ApiCommand("import-secret") {
  * in `ps` and settles in the shell history. There is no self-service — the internal contour has a
  * handful of people, and an administrator does the reset (research-internal-login §2).
  */
-class UserSetPassword : ApiCommand("set-password") {
+public class UserSetPassword : ApiCommand("set-password") {
     private val userId by argument("userId")
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val password = readlnOrNull()?.trim().orEmpty()
             if (password.isEmpty()) {
@@ -256,8 +256,8 @@ class UserSetPassword : ApiCommand("set-password") {
         }
 }
 
-class UserList : ApiCommand("list") {
-    override fun run() =
+public class UserList : ApiCommand("list") {
+    override fun run(): Unit =
         run { api ->
             out.table(
                 listOf("id", "email", "enabled", "identities"),
@@ -279,7 +279,7 @@ class UserList : ApiCommand("list") {
  * The secret is read from the environment, not from an argument: an argument is visible in `ps`
  * and stays in the shell history — the same rule as for `client import-secret`.
  */
-class UserImport : ApiCommand("import") {
+public class UserImport : ApiCommand("import") {
     private val keycloakUrl by option("--from-keycloak", envvar = "KEYCLOAK_URL", help = "Previous provider URL")
         .required()
     private val keycloakRealm by option("--from-realm", envvar = "KEYCLOAK_REALM", help = "Previous provider realm")
@@ -289,7 +289,7 @@ class UserImport : ApiCommand("import") {
         help = "From the environment only",
     ).required()
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val source =
                 KeycloakSource(
@@ -317,29 +317,29 @@ class UserImport : ApiCommand("import") {
         }
 }
 
-class ClientSetRoles : ApiCommand("set-roles") {
+public class ClientSetRoles : ApiCommand("set-roles") {
     private val clientId by argument("clientId")
     private val roles by option("--role").multiple(required = true)
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val updated = api.setRoles(tenant, clientId, roles)
             out.record(listOf("clientId" to updated.clientId, "roles" to updated.roles.joinToString(" ")))
         }
 }
 
-class ClientDelete : ApiCommand("delete") {
+public class ClientDelete : ApiCommand("delete") {
     private val clientId by argument("clientId")
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             api.deleteClient(tenant, clientId)
             out.message("Deleted: $clientId")
         }
 }
 
-class KeyList : ApiCommand("list") {
-    override fun run() =
+public class KeyList : ApiCommand("list") {
+    override fun run(): Unit =
         run { api ->
             val keys = api.listKeys(tenant)
 
@@ -356,8 +356,8 @@ class KeyList : ApiCommand("list") {
         }
 }
 
-class KeyRotate : ApiCommand("rotate") {
-    override fun run() =
+public class KeyRotate : ApiCommand("rotate") {
+    override fun run(): Unit =
         run { api ->
             val rotated = api.rotateKey(tenant)
             out.record(listOf("kid" to rotated.kid))
@@ -365,10 +365,10 @@ class KeyRotate : ApiCommand("rotate") {
         }
 }
 
-class KeyRetire : ApiCommand("retire") {
+public class KeyRetire : ApiCommand("retire") {
     private val kid by argument("kid")
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             api.retireKey(tenant, kid)
             out.message("Key retired: $kid")
@@ -380,8 +380,8 @@ class KeyRetire : ApiCommand("retire") {
  * first in the list, the records are still encrypted with the previous one. Until this command has
  * run, the old key must stay in the configuration.
  */
-class KeyReencrypt : ApiCommand("reencrypt") {
-    override fun run() =
+public class KeyReencrypt : ApiCommand("reencrypt") {
+    override fun run(): Unit =
         run { api ->
             val report = api.reencryptKeys()
             out.record(
@@ -394,7 +394,7 @@ class KeyReencrypt : ApiCommand("reencrypt") {
         }
 }
 
-fun shildikCommand(): CliktCommand =
+public fun shildikCommand(): CliktCommand =
     Shildik().subcommands(
         NoOpCliktCommand(name = "tenant").subcommands(TenantList(), TenantCreate()),
         NoOpCliktCommand(name = "client").subcommands(

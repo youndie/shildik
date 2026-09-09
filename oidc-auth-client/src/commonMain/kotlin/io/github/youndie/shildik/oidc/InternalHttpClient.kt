@@ -40,7 +40,7 @@ import kotlinx.serialization.json.Json
  *   a call is better answered by the server-side span on the receiving end. The previous behaviour
  *   is one argument away at the call site.
  */
-fun provideClient(
+public fun provideClient(
     authService: OidcAuthService,
     config: OidcConfig,
     endpoint: String,

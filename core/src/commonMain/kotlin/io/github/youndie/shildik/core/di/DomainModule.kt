@@ -36,7 +36,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 /** The domain's use cases. Ports arrive from the storage module — no implementations here. */
-fun domainModule(): Module =
+public fun domainModule(): Module =
     module {
         single { ActiveSigningKey(get(), get()) }
         single { GetJwksUseCase(get(), get(), get(), get()) }

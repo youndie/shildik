@@ -37,8 +37,8 @@ import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-class AdminApiException(
-    val status: Int,
+public class AdminApiException(
+    public val status: Int,
     override val message: String,
 ) : Exception(message)
 
@@ -52,7 +52,7 @@ class AdminApiException(
  * There is still no validation here: `clientId` uniqueness, whether a role is allowed and the
  * order of rotation are domain invariants (research §R6).
  */
-class AdminClient(
+public class AdminClient(
     baseUrl: String,
     token: String,
 ) {
@@ -86,16 +86,16 @@ class AdminClient(
 
     private fun keys(realm: String) = AdminResource.Tenants.ByTenant.Keys(tenant(realm))
 
-    suspend fun listTenants(): List<TenantView> = http.get(tenants).decode()
+    public suspend fun listTenants(): List<TenantView> = http.get(tenants).decode()
 
-    suspend fun createTenant(
+    public suspend fun createTenant(
         realm: String,
         registrationOpen: Boolean = true,
     ): TenantView = http.post(tenants) { jsonBody(CreateTenantRequest(realm, registrationOpen)) }.decode()
 
-    suspend fun listClients(realm: String): List<ClientView> = http.get(clients(realm)).decode()
+    public suspend fun listClients(realm: String): List<ClientView> = http.get(clients(realm)).decode()
 
-    suspend fun createClient(
+    public suspend fun createClient(
         realm: String,
         clientId: String,
         roles: List<String>,
@@ -109,7 +109,7 @@ class AdminClient(
                 jsonBody(CreateClientRequest(clientId, roles, public, redirectUris, audiences, scopes))
             }.decode()
 
-    suspend fun rotateSecret(
+    public suspend fun rotateSecret(
         realm: String,
         clientId: String,
     ): ClientWithSecret =
@@ -120,7 +120,7 @@ class AdminClient(
             ).decode()
 
     /** Import of a secret from the previous provider (deploy.md §4a). */
-    suspend fun setPassword(
+    public suspend fun setPassword(
         realm: String,
         userId: String,
         password: String,
@@ -135,7 +135,7 @@ class AdminClient(
             .ensureSuccess()
     }
 
-    suspend fun importSecret(
+    public suspend fun importSecret(
         realm: String,
         clientId: String,
         secret: String,
@@ -148,10 +148,10 @@ class AdminClient(
                 jsonBody(ImportSecretRequest(secret))
             }.decode()
 
-    suspend fun listUsers(realm: String): List<UserView> =
+    public suspend fun listUsers(realm: String): List<UserView> =
         http.get(AdminResource.Tenants.ByTenant.Users(tenant(realm))).decode()
 
-    suspend fun importUser(
+    public suspend fun importUser(
         realm: String,
         request: ImportUserRequest,
     ): ImportedUserView =
@@ -160,7 +160,7 @@ class AdminClient(
                 jsonBody(request)
             }.decode()
 
-    suspend fun setAudiences(
+    public suspend fun setAudiences(
         realm: String,
         clientId: String,
         audiences: List<String>,
@@ -173,7 +173,7 @@ class AdminClient(
                 jsonBody(SetAudiencesRequest(audiences))
             }.decode()
 
-    suspend fun setScopes(
+    public suspend fun setScopes(
         realm: String,
         clientId: String,
         scopes: List<String>,
@@ -186,7 +186,7 @@ class AdminClient(
                 jsonBody(SetScopesRequest(scopes))
             }.decode()
 
-    suspend fun setRoles(
+    public suspend fun setRoles(
         realm: String,
         clientId: String,
         roles: List<String>,
@@ -199,23 +199,23 @@ class AdminClient(
                 jsonBody(SetRolesRequest(roles))
             }.decode()
 
-    suspend fun deleteClient(
+    public suspend fun deleteClient(
         realm: String,
         clientId: String,
     ) {
         http.delete(client(realm, clientId)).ensureSuccess()
     }
 
-    suspend fun listKeys(realm: String): List<KeyView> = http.get(keys(realm)).decode()
+    public suspend fun listKeys(realm: String): List<KeyView> = http.get(keys(realm)).decode()
 
-    suspend fun rotateKey(realm: String): KeyView =
+    public suspend fun rotateKey(realm: String): KeyView =
         http
             .post(
                 AdminResource.Tenants.ByTenant.Keys
                     .Rotate(keys(realm)),
             ).decode()
 
-    suspend fun retireKey(
+    public suspend fun retireKey(
         realm: String,
         kid: String,
     ) {
@@ -226,7 +226,7 @@ class AdminClient(
             ).ensureSuccess()
     }
 
-    suspend fun reencryptKeys(): ReencryptView = http.post(AdminResource.ReencryptKeys()).decode()
+    public suspend fun reencryptKeys(): ReencryptView = http.post(AdminResource.ReencryptKeys()).decode()
 
     private fun HttpRequestBuilder.jsonBody(body: Any) {
         contentType(ContentType.Application.Json)

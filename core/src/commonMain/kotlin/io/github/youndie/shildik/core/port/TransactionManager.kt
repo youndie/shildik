@@ -8,8 +8,8 @@ package io.github.youndie.shildik.core.port
  * It lives in `:core` deliberately: elsewhere the same interface sits in one module with its Mongo
  * implementation, packing the port together with the adapter. Not here.
  */
-interface TransactionManager {
-    suspend fun <T> withTransaction(block: suspend () -> T): T
+public interface TransactionManager {
+    public suspend fun <T> withTransaction(block: suspend () -> T): T
 }
 
 /**
@@ -17,6 +17,6 @@ interface TransactionManager {
  * for instance). It exists so that the port could be introduced at once, without waiting for an
  * adapter (research §Risk 3).
  */
-object NoopTransactionManager : TransactionManager {
+public object NoopTransactionManager : TransactionManager {
     override suspend fun <T> withTransaction(block: suspend () -> T): T = block()
 }

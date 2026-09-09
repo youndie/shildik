@@ -23,9 +23,9 @@ import kotlinx.serialization.json.JsonPrimitive
  * token this provider issued before any of this existed. That is what keeps every client that
  * already works working.
  */
-object Audiences {
+public object Audiences {
     /** The audience of a token, or empty when this client has none. Refuses a resource not granted. */
-    fun resolve(
+    public fun resolve(
         client: Client,
         requested: Set<String>,
     ): Set<String> {
@@ -43,7 +43,7 @@ object Audiences {
      * not used: it is the form libraries most often get wrong, and there is nothing to gain by
      * finding out which ones.
      */
-    fun claim(audiences: Set<String>): JsonElement? =
+    public fun claim(audiences: Set<String>): JsonElement? =
         when (audiences.size) {
             0 -> null
             1 -> JsonPrimitive(audiences.first())
@@ -58,6 +58,6 @@ object Audiences {
  * `invalid_client`: the client is who it says it is, and telling it so is what lets whoever
  * configured it see that the resource is missing from the list rather than that the secret is wrong.
  */
-class UnknownResource(
-    val resource: String,
+public class UnknownResource(
+    public val resource: String,
 ) : Exception("invalid_target")

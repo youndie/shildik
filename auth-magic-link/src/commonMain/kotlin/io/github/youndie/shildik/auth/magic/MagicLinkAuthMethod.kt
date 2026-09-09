@@ -19,11 +19,11 @@ import kotlin.time.Clock
  * Hence `emailVerified = true` on the resulting identity: linking by email is allowed only to
  * whoever actually checked it.
  */
-class MagicLinkAuthMethod(
+public class MagicLinkAuthMethod(
     private val secret: String,
     private val clock: Clock = Clock.System,
 ) : AuthMethod {
-    override val id = ID
+    override val id: String = ID
 
     override suspend fun authenticate(request: AuthRequest): AuthenticatedSubject? {
         val token = request[TOKEN_PARAM]?.takeIf { it.isNotBlank() } ?: return null
@@ -43,10 +43,10 @@ class MagicLinkAuthMethod(
         return AuthenticatedSubject(externalId = email, email = email, emailVerified = true)
     }
 
-    companion object {
-        const val ID = "magic"
+    public companion object {
+        public const val ID: String = "magic"
 
         /** The parameter name is set by the client side: `signIn(..., { handoff_token })`. */
-        const val TOKEN_PARAM = "handoff_token"
+        public const val TOKEN_PARAM: String = "handoff_token"
     }
 }

@@ -7,7 +7,7 @@ import io.github.youndie.shildik.core.model.TenantId
 import io.github.youndie.shildik.core.port.PendingAuthorizationRepository
 import kotlin.time.Instant
 
-class Sqlx4kPendingAuthorizationRepository(
+public class Sqlx4kPendingAuthorizationRepository(
     private val db: Driver,
 ) : PendingAuthorizationRepository {
     override suspend fun save(pending: PendingAuthorization) {

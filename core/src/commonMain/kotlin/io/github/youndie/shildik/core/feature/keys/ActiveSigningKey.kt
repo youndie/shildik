@@ -20,7 +20,7 @@ import kotlin.time.Clock
  * "generate a key" step, otherwise the very first request after a deployment gets a 500 and that
  * looks like a fault rather than an unfinished setup.
  */
-class ActiveSigningKey(
+public class ActiveSigningKey(
     private val keys: KeyRepository,
     private val cipher: MasterKeyCipher,
     private val clock: Clock = Clock.System,
@@ -28,16 +28,21 @@ class ActiveSigningKey(
     private val mutex = Mutex()
     private val cache = mutableMapOf<TenantId, SigningKey>()
 
-    suspend fun forTenant(tenantId: TenantId): SigningKey =
+    public suspend fun forTenant(tenantId: TenantId): SigningKey =
         mutex.withLock {
             cache.getOrPut(tenantId) { loadOrCreate(tenantId) }
         }
 
-    /** Drop the cache after a rotation — otherwise we keep signing with a retired key. */
-    suspend fun invalidate(tenantId: TenantId) =
+    /**
+     * Drop the cache after a rotation — otherwise we keep signing with a retired key.
+     *
+     * The trailing `Unit` this body used to end with gave the lambda a return value while the
+     * function's own type was inferred. With `: Unit` written down the lambda is coerced instead,
+     * and that expression became dead — which `-Werror` said out loud.
+     */
+    public suspend fun invalidate(tenantId: TenantId): Unit =
         mutex.withLock {
             cache.remove(tenantId)
-            Unit
         }
 
     /**
@@ -47,7 +52,7 @@ class ActiveSigningKey(
      * still in circulation, and it is still in JWKS (research §Risk 2). Verifying them with the
      * current key only would mean rejecting tokens we issued ourselves five minutes ago.
      */
-    suspend fun byKid(
+    public suspend fun byKid(
         tenantId: TenantId,
         kid: String,
     ): SigningKey? =

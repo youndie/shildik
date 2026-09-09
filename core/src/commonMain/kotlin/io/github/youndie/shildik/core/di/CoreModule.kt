@@ -15,7 +15,7 @@ import org.koin.dsl.module
  * `TransactionManager` defaults to [NoopTransactionManager]; a build with real storage overrides it
  * with the adapter's module.
  */
-fun coreModule(config: ShildikConfig): Module =
+public fun coreModule(config: ShildikConfig): Module =
     module {
         single { config }
         single { MasterKeyCipher(config.masterKeys) }
@@ -33,8 +33,8 @@ fun coreModule(config: ShildikConfig): Module =
  * A separate class since M0, because the point where the issuer is decided has to be a single one:
  * per-tenant resolution will arrive here in M1.
  */
-class IssuerResolver(
+public class IssuerResolver(
     private val config: ShildikConfig,
 ) {
-    fun issuerFor(realm: String): String = "${config.issuer}/realms/$realm"
+    public fun issuerFor(realm: String): String = "${config.issuer}/realms/$realm"
 }

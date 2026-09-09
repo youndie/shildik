@@ -12,14 +12,14 @@ import kotlinx.serialization.json.JsonObject
  * `RoleBasedPrincipal` is absent too, because Ktor's authentication plugin — and therefore the
  * role plugin built on it — is JVM-only. A native service checks roles itself, from [roles].
  */
-actual class OidcPrincipal internal actual constructor(
+public actual class OidcPrincipal internal actual constructor(
     verified: VerifiedToken,
 ) {
-    actual val azp: String = verified.azp.orEmpty()
-    actual val email: String? = verified.email
-    actual val roles: Set<String> = verified.roles
-    actual val subject: String? = verified.subject
-    actual val claims: JsonObject = verified.claims
+    public actual val azp: String = verified.azp.orEmpty()
+    public actual val email: String? = verified.email
+    public actual val roles: Set<String> = verified.roles
+    public actual val subject: String? = verified.subject
+    public actual val claims: JsonObject = verified.claims
 
     override fun toString(): String = "OidcPrincipal(azp=$azp, email=$email, roles=$roles)"
 }

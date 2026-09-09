@@ -12,7 +12,7 @@ import io.github.youndie.shildik.core.port.ClientRepository
  * Roles and addresses are replaced **wholesale**: a configuration describes the state of a client
  * rather than adding to what was there.
  */
-class Sqlx4kClientRepository(
+public class Sqlx4kClientRepository(
     private val db: Driver,
 ) : ClientRepository {
     override suspend fun find(

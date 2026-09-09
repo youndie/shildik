@@ -15,7 +15,7 @@ import io.github.youndie.shildik.core.port.TenantRepository
  * improvement made at the same time.
  * (research-native §7.1).
  */
-class Sqlx4kTenantRepository(
+public class Sqlx4kTenantRepository(
     private val db: Driver,
 ) : TenantRepository {
     override suspend fun byRealm(realm: String): Tenant? =

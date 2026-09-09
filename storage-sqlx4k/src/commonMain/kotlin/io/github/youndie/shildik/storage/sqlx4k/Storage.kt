@@ -13,7 +13,7 @@ import kotlin.time.Duration.Companion.seconds
  * had earned its place. sqlx4k expects `postgresql://...`, so the prefix comes off here, in one
  * place.
  */
-expect fun postgres(
+public expect fun postgres(
     jdbcUrl: String,
     user: String,
     password: String,

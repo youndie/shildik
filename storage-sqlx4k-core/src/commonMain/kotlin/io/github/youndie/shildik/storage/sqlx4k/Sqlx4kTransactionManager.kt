@@ -14,7 +14,7 @@ import io.github.youndie.shildik.core.port.TransactionManager
  * There is no bridge to the blocking world either: the driver is asynchronous, `Dispatchers.IO`
  * is not needed.
  */
-class Sqlx4kTransactionManager(
+public class Sqlx4kTransactionManager(
     private val db: Driver,
 ) : TransactionManager {
     override suspend fun <T> withTransaction(block: suspend () -> T): T = TransactionContext.withCurrent(db) { block() }

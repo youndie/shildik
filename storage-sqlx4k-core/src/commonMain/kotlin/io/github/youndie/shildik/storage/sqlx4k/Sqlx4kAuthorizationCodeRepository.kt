@@ -6,7 +6,7 @@ import io.github.youndie.shildik.core.model.TenantId
 import io.github.youndie.shildik.core.port.AuthorizationCodeRepository
 import kotlin.time.Instant
 
-class Sqlx4kAuthorizationCodeRepository(
+public class Sqlx4kAuthorizationCodeRepository(
     private val db: Driver,
 ) : AuthorizationCodeRepository {
     override suspend fun save(code: AuthorizationCode) {

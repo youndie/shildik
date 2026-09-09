@@ -13,59 +13,59 @@ import kotlinx.serialization.Serializable
  * visible in one place.
  */
 @Resource("/realms/{realm}")
-class RealmResource(
-    val realm: String,
+public class RealmResource(
+    public val realm: String,
 ) {
     @Resource("protocol/openid-connect")
-    class OpenIdConnect(
-        val parent: RealmResource,
+    public class OpenIdConnect(
+        public val parent: RealmResource,
     ) {
         @Resource("token")
-        class Token(
-            val parent: OpenIdConnect,
+        public class Token(
+            public val parent: OpenIdConnect,
         )
 
         /** Where a browser sign-in begins. */
         @Resource("auth")
-        class Auth(
-            val parent: OpenIdConnect,
+        public class Auth(
+            public val parent: OpenIdConnect,
         ) {
             /** Where an external provider returns the person. */
             @Resource("{method}/callback")
-            class Callback(
-                val parent: Auth,
-                val method: String,
+            public class Callback(
+                public val parent: Auth,
+                public val method: String,
             )
 
             /** Where the sign-in form posts a login and a password. */
             @Resource("{method}/login")
-            class Login(
-                val parent: Auth,
-                val method: String,
+            public class Login(
+                public val parent: Auth,
+                public val method: String,
             )
         }
 
         /** The profile of whoever holds the token. Required in discovery by some clients even if never called. */
         @Resource("userinfo")
-        class UserInfo(
-            val parent: OpenIdConnect,
+        public class UserInfo(
+            public val parent: OpenIdConnect,
         )
 
         /** Sign-out: the refresh token chain is revoked and the person is handed back to the application. */
         @Resource("logout")
-        class Logout(
-            val parent: OpenIdConnect,
+        public class Logout(
+            public val parent: OpenIdConnect,
         )
 
         @Resource("certs")
-        class Certs(
-            val parent: OpenIdConnect,
+        public class Certs(
+            public val parent: OpenIdConnect,
         )
     }
 
     @Resource(".well-known/openid-configuration")
-    class Discovery(
-        val parent: RealmResource,
+    public class Discovery(
+        public val parent: RealmResource,
     )
 }
 
@@ -87,48 +87,48 @@ class RealmResource(
  * client derives its address from the issuer, not from a setting.
  */
 @Resource("/realms/{realm}/oauth2")
-class OAuth2(
-    val realm: String,
+public class OAuth2(
+    public val realm: String,
 ) {
     @Resource("token")
-    class Token(
-        val parent: OAuth2,
+    public class Token(
+        public val parent: OAuth2,
     )
 
     /** `authorize`, not `auth`: the endpoint is named that way in RFC 6749 §3.1. */
     @Resource("authorize")
-    class Authorize(
-        val parent: OAuth2,
+    public class Authorize(
+        public val parent: OAuth2,
     )
 
     /** `jwks`, not `certs`: the document is a JWK Set — [RFC 7517](https://www.rfc-editor.org/rfc/rfc7517). */
     @Resource("jwks")
-    class Jwks(
-        val parent: OAuth2,
+    public class Jwks(
+        public val parent: OAuth2,
     )
 
     @Resource("userinfo")
-    class UserInfo(
-        val parent: OAuth2,
+    public class UserInfo(
+        public val parent: OAuth2,
     )
 
     @Resource("logout")
-    class Logout(
-        val parent: OAuth2,
+    public class Logout(
+        public val parent: OAuth2,
     )
 
     /** Where an external provider returns the person. */
     @Resource("callback/{method}")
-    class Callback(
-        val parent: OAuth2,
-        val method: String,
+    public class Callback(
+        public val parent: OAuth2,
+        public val method: String,
     )
 
     /** Where the sign-in form posts a login and a password. */
     @Resource("login/{method}")
-    class Login(
-        val parent: OAuth2,
-        val method: String,
+    public class Login(
+        public val parent: OAuth2,
+        public val method: String,
     )
 }
 
@@ -139,7 +139,7 @@ class OAuth2(
  * is not optional here: a client reads `access_token`, not `accessToken`.
  */
 @Serializable
-data class TokenResponse(
+public data class TokenResponse(
     @SerialName("access_token") val accessToken: String,
     @SerialName("expires_in") val expiresIn: Long,
     @SerialName("token_type") val tokenType: String = "Bearer",
@@ -150,7 +150,7 @@ data class TokenResponse(
 )
 
 @Serializable
-data class OAuthError(
+public data class OAuthError(
     val error: String,
 )
 
@@ -159,7 +159,7 @@ data class OAuthError(
  * believe it.
  */
 @Serializable
-data class DiscoveryDocument(
+public data class DiscoveryDocument(
     val issuer: String,
     @SerialName("authorization_endpoint") val authorizationEndpoint: String,
     @SerialName("token_endpoint") val tokenEndpoint: String,

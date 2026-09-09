@@ -24,7 +24,7 @@ import org.koin.dsl.onClose
  * not an account. A signature carrying two empty strings would suggest there is something to
  * configure.
  */
-fun sqlx4kSqliteStorageModule(
+public fun sqlx4kSqliteStorageModule(
     databasePath: String,
     migrationsPath: String? = null,
 ): Module =
@@ -51,7 +51,7 @@ fun sqlx4kSqliteStorageModule(
  * that file, and picking a path on its behalf would put a production database somewhere nobody
  * chose — a directory that may not be a volume, and whose contents disappear with the container.
  */
-fun sqlx4kSqliteStorageModule(
+public fun sqlx4kSqliteStorageModule(
     config: ShildikConfig,
     migrationsPath: String? = null,
 ): Module =

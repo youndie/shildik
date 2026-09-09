@@ -22,7 +22,7 @@ import org.koin.dsl.module
  * of its own is the driver and the schema — not eleven more lines naming the same classes. Two
  * copies of this list would agree until somebody added a twelfth port to one of them.
  */
-fun sqlx4kPorts(): Module =
+public fun sqlx4kPorts(): Module =
     module {
         single<StorageHealth> { Sqlx4kStorageHealth(get()) }
         single<TenantRepository> { Sqlx4kTenantRepository(get()) }

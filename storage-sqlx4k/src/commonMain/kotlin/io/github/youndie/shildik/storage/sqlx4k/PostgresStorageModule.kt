@@ -13,7 +13,7 @@ import org.koin.dsl.onClose
  * one-line change, or the two storages cannot be compared with one and the same test suite.
  * (research-native §7.1).
  */
-fun sqlx4kStorageModule(
+public fun sqlx4kStorageModule(
     jdbcUrl: String,
     user: String,
     password: String,

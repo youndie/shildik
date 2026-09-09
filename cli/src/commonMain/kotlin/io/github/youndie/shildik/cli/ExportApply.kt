@@ -18,10 +18,10 @@ private val prettyJson =
 // serializers module every time.
 private val lenientJson = Json { ignoreUnknownKeys = true }
 
-class Export : ApiCommand("export") {
+public class Export : ApiCommand("export") {
     private val file by option("-f", "--file", help = "Where to write; stdout by default")
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val tenants =
                 api.listTenants().map { t ->
@@ -52,16 +52,16 @@ class Export : ApiCommand("export") {
 }
 
 /** A single change `apply` can make. */
-sealed interface Change {
-    val summary: String
+public sealed interface Change {
+    public val summary: String
 
-    data class CreateTenant(
+    public data class CreateTenant(
         val realm: String,
     ) : Change {
-        override val summary get() = "+ tenant $realm"
+        override val summary: String get() = "+ tenant $realm"
     }
 
-    data class CreateClient(
+    public data class CreateClient(
         val realm: String,
         val clientId: String,
         val roles: List<String>,
@@ -70,7 +70,7 @@ sealed interface Change {
         val audiences: List<String> = emptyList(),
         val scopes: List<String> = emptyList(),
     ) : Change {
-        override val summary get() =
+        override val summary: String get() =
             if (public) {
                 "+ public client $clientId in $realm [${redirectUris.joinToString(" ")}]"
             } else {
@@ -78,31 +78,37 @@ sealed interface Change {
             }
     }
 
-    data class UpdateAudiences(
+    public data class UpdateAudiences(
         val realm: String,
         val clientId: String,
         val from: List<String>,
         val to: List<String>,
     ) : Change {
-        override val summary get() = "~ audiences $clientId: [${from.joinToString(" ")}] → [${to.joinToString(" ")}]"
+        override val summary: String get() = "~ audiences $clientId: [${from.joinToString(
+            " ",
+        )}] → [${to.joinToString(" ")}]"
     }
 
-    data class UpdateScopes(
+    public data class UpdateScopes(
         val realm: String,
         val clientId: String,
         val from: List<String>,
         val to: List<String>,
     ) : Change {
-        override val summary get() = "~ scopes $clientId: [${from.joinToString(" ")}] → [${to.joinToString(" ")}]"
+        override val summary: String get() = "~ scopes $clientId: [${from.joinToString(
+            " ",
+        )}] → [${to.joinToString(" ")}]"
     }
 
-    data class UpdateRoles(
+    public data class UpdateRoles(
         val realm: String,
         val clientId: String,
         val from: List<String>,
         val to: List<String>,
     ) : Change {
-        override val summary get() = "~ roles $clientId: [${from.joinToString(" ")}] → [${to.joinToString(" ")}]"
+        override val summary: String get() = "~ roles $clientId: [${from.joinToString(
+            " ",
+        )}] → [${to.joinToString(" ")}]"
     }
 
     /**
@@ -112,11 +118,11 @@ sealed interface Change {
      * report at all means the configuration in git silently drifts from the instance. The report
      * is the middle ground: the drift is visible, nothing destructive happens (open-questions Q5).
      */
-    data class Extra(
+    public data class Extra(
         val realm: String,
         val clientId: String,
     ) : Change {
-        override val summary get() =
+        override val summary: String get() =
             "! the instance has an extra client $clientId ($realm) — the file does not describe it"
     }
 }
@@ -127,7 +133,7 @@ sealed interface Change {
  * Shared by `plan` and `apply`: a plan computed by code other than the code that applies it is a
  * plan that will one day disagree with the deed.
  */
-suspend fun planChanges(
+public suspend fun planChanges(
     api: AdminClient,
     config: ExportedConfig,
 ): List<Change> {
@@ -206,7 +212,8 @@ suspend fun planChanges(
     return changes
 }
 
-fun readConfig(path: String): ExportedConfig = lenientJson.decodeFromString(ExportedConfig.serializer(), readFile(path))
+public fun readConfig(path: String): ExportedConfig =
+    lenientJson.decodeFromString(ExportedConfig.serializer(), readFile(path))
 
 /**
  * Show what `apply` would do, changing nothing.
@@ -214,10 +221,10 @@ fun readConfig(path: String): ExportedConfig = lenientJson.decodeFromString(Expo
  * A separate command rather than a `--dry-run` flag: a plan is what people read before applying,
  * and it must be reachable without the risk of missing the flag.
  */
-class Plan : ApiCommand("plan") {
+public class Plan : ApiCommand("plan") {
     private val file by option("-f", "--file", help = "Configuration file").required()
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val changes = planChanges(api, readConfig(file))
 
@@ -250,10 +257,10 @@ class Plan : ApiCommand("plan") {
  * Secrets are not applied: the file has none. A client that did not exist is created — and its
  * secret is printed here exactly once.
  */
-class Apply : ApiCommand("apply") {
+public class Apply : ApiCommand("apply") {
     private val file by option("-f", "--file", help = "Configuration file").required()
 
-    override fun run() =
+    override fun run(): Unit =
         run { api ->
             val config = lenientJson.decodeFromString(ExportedConfig.serializer(), readFile(file))
 
@@ -311,9 +318,9 @@ class Apply : ApiCommand("apply") {
 }
 
 /** File I/O is platform-specific: common has none. */
-expect fun readFile(path: String): String
+public expect fun readFile(path: String): String
 
-expect fun writeFile(
+public expect fun writeFile(
     path: String,
     content: String,
 )

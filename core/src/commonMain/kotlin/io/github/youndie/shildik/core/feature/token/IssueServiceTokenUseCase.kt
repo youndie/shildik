@@ -12,10 +12,11 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 /** A refusal to issue. Outwards every reason looks the same — see [InvalidClient]. */
-class InvalidClient : Exception("invalid_client")
+public class InvalidClient : Exception("invalid_client")
 
 /**
  * Issuing a service token via `client_credentials`.
@@ -23,7 +24,7 @@ class InvalidClient : Exception("invalid_client")
  * The shape of the claims is dictated by validators that are already in production
  * (api/protocol-oidc-subset.md §2): `azp` + `realm_access.roles` is what the relying services read.
  */
-class IssueServiceTokenUseCase(
+public class IssueServiceTokenUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val activeKey: ActiveSigningKey,
@@ -79,27 +80,27 @@ class IssueServiceTokenUseCase(
             )
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val clientSecret: String,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val clientSecret: String,
         /** RFC 8707 `resource`, as many as were sent. Empty means "whatever this client is for". */
-        val resources: Set<String> = emptySet(),
+        public val resources: Set<String> = emptySet(),
         /** The `scope` parameter, already split. Empty means "whatever this client may do". */
-        val scopes: Set<String> = emptySet(),
+        public val scopes: Set<String> = emptySet(),
     )
 
-    companion object {
+    public companion object {
         /**
          * Five minutes — comfortably more than the 60-second lead time with which a client refreshes
          * its token. The TTL must not drop below that boundary: the client would then fetch a new
          * token continuously.
          */
-        val TOKEN_TTL = 5.minutes
+        public val TOKEN_TTL: Duration = 5.minutes
     }
 }
 
-data class IssuedToken(
+public data class IssuedToken(
     val accessToken: String,
     val expiresInSeconds: Long,
     /**

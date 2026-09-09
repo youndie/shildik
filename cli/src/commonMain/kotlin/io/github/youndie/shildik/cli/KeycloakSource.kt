@@ -31,7 +31,7 @@ import kotlinx.serialization.json.Json
  * admin API: no separate administrator has to be provisioned, the service client already has the
  * rights.
  */
-class KeycloakSource(
+public class KeycloakSource(
     private val baseUrl: String,
     private val realm: String,
     private val clientId: String,
@@ -84,7 +84,7 @@ class KeycloakSource(
      * a request without paging silently returns only the beginning of the list. Silently is the
      * worst part: the import reports success while half the people stay behind.
      */
-    suspend fun users(pageSize: Int = 100): List<ImportUserRequest> {
+    public suspend fun users(pageSize: Int = 100): List<ImportUserRequest> {
         val collected = mutableListOf<ImportUserRequest>()
         var offset = 0
 

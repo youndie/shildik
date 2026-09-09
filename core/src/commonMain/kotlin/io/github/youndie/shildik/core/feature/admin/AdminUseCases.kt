@@ -16,17 +16,18 @@ import io.github.youndie.shildik.crypto.MasterKeyCipher
 import io.github.youndie.shildik.crypto.Secrets
 import io.github.youndie.shildik.crypto.SigningKey
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
-class AlreadyExists(
+public class AlreadyExists(
     what: String,
 ) : Exception("Already exists: $what")
 
-class NotFound(
+public class NotFound(
     what: String,
 ) : Exception("Not found: $what")
 
-class CreateTenantUseCase(
+public class CreateTenantUseCase(
     private val tenants: TenantRepository,
 ) : UseCase<CreateTenantUseCase.Params, Tenant> {
     override suspend fun invoke(params: Params): Result<Tenant> =
@@ -35,24 +36,24 @@ class CreateTenantUseCase(
             tenants.create(Tenant(TenantId(params.realm), params.realm, params.registrationOpen))
         }
 
-    class Params(
-        val realm: String,
-        val registrationOpen: Boolean = true,
+    public class Params(
+        public val realm: String,
+        public val registrationOpen: Boolean = true,
     )
 
     /** A short form for tests and bootstrap: an open tenant, the earlier behaviour. */
-    suspend operator fun invoke(realm: String): Result<Tenant> = invoke(Params(realm))
+    public suspend operator fun invoke(realm: String): Result<Tenant> = invoke(Params(realm))
 }
 
 /** A created client together with its secret — the **only** moment the secret is visible. */
-data class CreatedClient(
+public data class CreatedClient(
     val clientId: String,
     /** `null` means the client is public: it has no secret, so there is nothing to show. */
     val secret: String?,
     val roles: Set<String>,
 )
 
-class CreateClientUseCase(
+public class CreateClientUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val transactions: TransactionManager,
@@ -95,20 +96,20 @@ class CreateClientUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val roles: Set<String>,
-        val public: Boolean = false,
-        val redirectUris: Set<String> = emptySet(),
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val roles: Set<String>,
+        public val public: Boolean = false,
+        public val redirectUris: Set<String> = emptySet(),
         /** Resources this client may hold a token for (RFC 8707). Empty means no `aud` at all. */
-        val audiences: Set<String> = emptySet(),
+        public val audiences: Set<String> = emptySet(),
         /** Permissions this client may hold. Empty means no `scope` claim at all. */
-        val scopes: Set<String> = emptySet(),
+        public val scopes: Set<String> = emptySet(),
     )
 }
 
-class RotateClientSecretUseCase(
+public class RotateClientSecretUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val transactions: TransactionManager,
@@ -125,9 +126,9 @@ class RotateClientSecretUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
     )
 }
 
@@ -144,7 +145,7 @@ class RotateClientSecretUseCase(
  * that issued it, and demanding our format of it is pointless. The only checks are that it is
  * neither empty nor absurdly short — a typo in a migration script must not pass silently.
  */
-class SetClientSecretUseCase(
+public class SetClientSecretUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val transactions: TransactionManager,
@@ -165,19 +166,19 @@ class SetClientSecretUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val secret: String,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val secret: String,
     )
 
-    companion object {
+    public companion object {
         /** No provider issues a secret shorter than this — so this is a typo. */
-        const val MIN_SECRET_LENGTH = 16
+        public const val MIN_SECRET_LENGTH: Int = 16
     }
 }
 
-class SetClientRolesUseCase(
+public class SetClientRolesUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val transactions: TransactionManager,
@@ -193,12 +194,12 @@ class SetClientRolesUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val roles: Set<String>,
-        val public: Boolean = false,
-        val redirectUris: Set<String> = emptySet(),
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val roles: Set<String>,
+        public val public: Boolean = false,
+        public val redirectUris: Set<String> = emptySet(),
     )
 }
 
@@ -209,7 +210,7 @@ class SetClientRolesUseCase(
  * been issuing tokens for a year is exactly the one whose tokens nobody could check the audience
  * of. Recreating it to add one would mean a new secret and a service down until somebody notices.
  */
-class SetClientAudiencesUseCase(
+public class SetClientAudiencesUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val transactions: TransactionManager,
@@ -225,10 +226,10 @@ class SetClientAudiencesUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val audiences: Set<String>,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val audiences: Set<String>,
     )
 }
 
@@ -239,7 +240,7 @@ class SetClientAudiencesUseCase(
  * ones already in service, and recreating one would mean a new secret and a service down until
  * somebody noticed.
  */
-class SetClientScopesUseCase(
+public class SetClientScopesUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val transactions: TransactionManager,
@@ -255,14 +256,14 @@ class SetClientScopesUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val scopes: Set<String>,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val scopes: Set<String>,
     )
 }
 
-class DeleteClientUseCase(
+public class DeleteClientUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
 ) : UseCase<DeleteClientUseCase.Params, Unit> {
@@ -273,13 +274,13 @@ class DeleteClientUseCase(
             clients.delete(tenant.id, params.clientId)
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
     )
 }
 
-class ListClientsUseCase(
+public class ListClientsUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
 ) : UseCase<String, List<Client>> {
@@ -297,7 +298,7 @@ class ListClientsUseCase(
  * clients cache keys for a day, and a key that has vanished breaks verification silently
  * (feature-signing-keys §3).
  */
-class RotateKeyUseCase(
+public class RotateKeyUseCase(
     private val tenants: TenantRepository,
     private val keys: KeyRepository,
     private val activeKey: ActiveSigningKey,
@@ -330,7 +331,7 @@ class RotateKeyUseCase(
         }
 }
 
-class RetireKeyUseCase(
+public class RetireKeyUseCase(
     private val tenants: TenantRepository,
     private val keys: KeyRepository,
     private val clock: Clock = Clock.System,
@@ -358,14 +359,14 @@ class RetireKeyUseCase(
             keys.updateState(tenant.id, params.kid, KeyState.RETIRED)
         }
 
-    class Params(
-        val realm: String,
-        val kid: String,
+    public class Params(
+        public val realm: String,
+        public val kid: String,
     )
 
-    companion object {
+    public companion object {
         /** A measurement, not caution: the clients' `JwkProviderBuilder` caches for 24 hours. */
-        val JWKS_CACHE_WINDOW = 24.hours
+        public val JWKS_CACHE_WINDOW: Duration = 24.hours
     }
 }
 
@@ -379,7 +380,7 @@ class RetireKeyUseCase(
  * Idempotent: records already encrypted with the current key are left alone. Which means it can be
  * run repeatedly and put into a script.
  */
-class ReencryptKeysUseCase(
+public class ReencryptKeysUseCase(
     private val tenants: TenantRepository,
     private val keys: KeyRepository,
     private val cipher: MasterKeyCipher,
@@ -408,12 +409,12 @@ class ReencryptKeysUseCase(
         }
 }
 
-data class ReencryptReport(
+public data class ReencryptReport(
     val reencrypted: Int,
     val untouched: Int,
 )
 
-class ListKeysUseCase(
+public class ListKeysUseCase(
     private val tenants: TenantRepository,
     private val keys: KeyRepository,
 ) : UseCase<String, List<SigningKeyRecord>> {
@@ -424,7 +425,7 @@ class ListKeysUseCase(
         }
 }
 
-class ListTenantsUseCase(
+public class ListTenantsUseCase(
     private val tenants: TenantRepository,
 ) : UseCase<Unit, List<Tenant>> {
     override suspend fun invoke(params: Unit): Result<List<Tenant>> = suspendRunCatching { tenants.list() }

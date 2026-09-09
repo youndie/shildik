@@ -33,7 +33,7 @@ import kotlinx.serialization.json.Json
  * The identity is Google's `sub`, not the email: a person can change their email, and binding by
  * it would mean that changing an address creates a new user.
  */
-class GoogleAuthMethod(
+public class GoogleAuthMethod(
     private val clientId: String,
     private val clientSecret: String,
     engine: HttpClientEngine? = null,
@@ -41,7 +41,7 @@ class GoogleAuthMethod(
     private val tokenEndpoint: String = "https://oauth2.googleapis.com/token",
     private val userInfoEndpoint: String = "https://openidconnect.googleapis.com/v1/userinfo",
 ) : RedirectingAuthMethod {
-    override val id = ID
+    override val id: String = ID
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -100,14 +100,14 @@ class GoogleAuthMethod(
         )
     }
 
-    companion object {
-        const val ID = "google"
+    public companion object {
+        public const val ID: String = "google"
 
         /**
          * The redirect address arrives in the parameters because Google checks it when the code
          * is exchanged: it must be the one from the authorization request, or the exchange fails.
          */
-        const val CALLBACK_URI_PARAM = "shildik_callback_uri"
+        public const val CALLBACK_URI_PARAM: String = "shildik_callback_uri"
     }
 }
 

@@ -23,7 +23,7 @@ import io.github.youndie.shildik.core.model.Client
  * would refuse every sign-in on this contour the moment this shipped, so they pass through
  * untouched — and they stay out of the claim, which describes what the bearer may do.
  */
-object Scopes {
+public object Scopes {
     /**
      * Scopes that shape our own answer rather than granting anything.
      *
@@ -31,7 +31,7 @@ object Scopes {
      * eventually be right about most names and wrong about one, and the one would be a permission
      * let through unasked.
      */
-    val PROTOCOL = setOf("openid", "profile", "email", "offline_access")
+    public val PROTOCOL: Set<String> = setOf("openid", "profile", "email", "offline_access")
 
     /**
      * What ends up in the claim. Refuses a scope the client was not granted.
@@ -40,7 +40,7 @@ object Scopes {
      * and dropping it silently from a check is the same as deciding it is always allowed — which it
      * is, and that decision belongs in one place with its reason.
      */
-    fun resolve(
+    public fun resolve(
         client: Client,
         requested: Set<String>,
     ): Set<String> {
@@ -57,10 +57,10 @@ object Scopes {
      * Space-delimited and sorted: RFC 6749 §3.3 defines the format, and the order carries no
      * meaning, so a stable one makes two tokens for the same grant compare equal.
      */
-    fun claim(scopes: Set<String>): String? = scopes.takeIf { it.isNotEmpty() }?.sorted()?.joinToString(" ")
+    public fun claim(scopes: Set<String>): String? = scopes.takeIf { it.isNotEmpty() }?.sorted()?.joinToString(" ")
 
     /** Splits a `scope` parameter. Any run of spaces, because senders disagree about how many. */
-    fun parse(value: String?): Set<String> =
+    public fun parse(value: String?): Set<String> =
         value
             ?.split(' ')
             ?.filter { it.isNotBlank() }
@@ -75,6 +75,6 @@ object Scopes {
  * — deliberately not `invalid_client`: the client is who it says it is, and whoever configured it
  * needs to see that a permission is missing from the list rather than that the secret is wrong.
  */
-class UnknownScope(
-    val scope: String,
+public class UnknownScope(
+    public val scope: String,
 ) : Exception("invalid_scope")

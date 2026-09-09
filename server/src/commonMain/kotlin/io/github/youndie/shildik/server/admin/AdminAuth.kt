@@ -3,12 +3,13 @@ package io.github.youndie.shildik.server.admin
 import io.github.youndie.shildik.core.feature.admin.AdminAccess
 import io.github.youndie.shildik.shared.ErrorView
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.RouteScopedPlugin
 import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.request.header
 import io.ktor.server.response.respond
 
-class AdminAuthConfig {
-    var access: AdminAccess? = null
+public class AdminAuthConfig {
+    public var access: AdminAccess? = null
 }
 
 /**
@@ -21,7 +22,7 @@ class AdminAuthConfig {
  * A separate port is the first line (api/endpoint-admin.md §1) but not the only one: a pod in the
  * same namespace can reach it, so a token is needed as well.
  */
-val AdminAuth =
+public val AdminAuth: RouteScopedPlugin<AdminAuthConfig> =
     createRouteScopedPlugin("AdminAuth", ::AdminAuthConfig) {
         val access = requireNotNull(pluginConfig.access) { "AdminAuth without AdminAccess" }
 

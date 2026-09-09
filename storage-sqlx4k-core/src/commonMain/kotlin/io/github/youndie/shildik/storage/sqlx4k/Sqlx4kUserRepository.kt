@@ -15,7 +15,7 @@ private const val USER_COLUMNS = "tenant_id, id, email, name, email_verified, en
  * Identities live in a table of their own and are **replaced wholesale** on save: a migration
  * describes a state rather than adding to what was there.
  */
-class Sqlx4kUserRepository(
+public class Sqlx4kUserRepository(
     private val db: Driver,
 ) : UserRepository {
     override suspend fun find(

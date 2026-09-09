@@ -57,7 +57,7 @@ import kotlin.io.encoding.Base64
 // URLs are not spelled out here as strings — they arrive from `:shared` as types
 // (`RealmResource`), and the client uses the same description. The shape of a URL used to live in
 // two places and could drift apart silently.
-fun Application.oidcRoutes(koin: Koin) {
+public fun Application.oidcRoutes(koin: Koin) {
     val issueToken = koin.get<IssueServiceTokenUseCase>()
     val authorize = koin.get<AuthorizeUseCase>()
     val start = koin.get<StartAuthorizationUseCase>()

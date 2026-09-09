@@ -6,7 +6,7 @@ import io.github.youndie.shildik.core.model.TenantId
 import io.github.youndie.shildik.core.port.LoginAttemptRepository
 import kotlin.time.Instant
 
-class Sqlx4kLoginAttemptRepository(
+public class Sqlx4kLoginAttemptRepository(
     private val db: Driver,
 ) : LoginAttemptRepository {
     override suspend fun find(

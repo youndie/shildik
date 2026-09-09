@@ -20,16 +20,16 @@ import kotlinx.serialization.json.jsonObject
  * The scope stays small for the same reason it was tolerable to write at all: parsing one kind of
  * JWK and one signature check. No other kinds of key appear here — see [fromJwk].
  */
-class VerificationKey(
-    val kid: String?,
+public class VerificationKey(
+    public val kid: String?,
     private val publicKey: RSA.PKCS1.PublicKey,
 ) {
-    suspend fun verify(
+    public suspend fun verify(
         data: ByteArray,
         signature: ByteArray,
     ): Boolean = publicKey.signatureVerifier().tryVerifySignature(data, signature)
 
-    companion object {
+    public companion object {
         /**
          * A key from a single JWK, or `null` when the key is not one we can use.
          *
@@ -39,7 +39,7 @@ class VerificationKey(
          * rejected **here**, before any verification, so that a supplied algorithm can never
          * become the choice of algorithm.
          */
-        suspend fun fromJwk(jwk: JsonObject): VerificationKey? {
+        public suspend fun fromJwk(jwk: JsonObject): VerificationKey? {
             fun text(name: String) = (jwk[name] as? JsonPrimitive)?.content
 
             if (text("kty") != "RSA") return null
@@ -66,7 +66,7 @@ class VerificationKey(
          * An empty list is a legitimate result: a provider may hold no key of a usable kind, and
          * that is no different from "there is no key with this `kid`".
          */
-        suspend fun fromJwks(json: String): List<VerificationKey> {
+        public suspend fun fromJwks(json: String): List<VerificationKey> {
             val keys =
                 runCatching {
                     (Json.parseToJsonElement(json) as JsonObject)["keys"]?.jsonArray

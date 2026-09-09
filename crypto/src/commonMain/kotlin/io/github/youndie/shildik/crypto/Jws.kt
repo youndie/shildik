@@ -14,23 +14,23 @@ import kotlinx.serialization.json.JsonPrimitive
  *
  * Foreign **formats** still do not get in: there is one algorithm and it is hard-wired.
  */
-object Jws {
+public object Jws {
     private val json = Json { encodeDefaults = true }
 
     /** A parsed token. `kid` from the header is what picks the key before the signature is checked. */
-    class Parsed(
-        val alg: String?,
-        val kid: String?,
-        val claims: JsonObject,
-        val signingInput: ByteArray,
-        val signature: ByteArray,
+    public class Parsed(
+        public val alg: String?,
+        public val kid: String?,
+        public val claims: JsonObject,
+        public val signingInput: ByteArray,
+        public val signature: ByteArray,
     )
 
     /**
      * Parsing without verification. The claims must not be trusted until the signature matches,
      * which is why a separate type comes back rather than the claims themselves.
      */
-    fun parse(token: String): Parsed? {
+    public fun parse(token: String): Parsed? {
         val parts = token.split('.')
         if (parts.size != 3) return null
 
@@ -56,7 +56,7 @@ object Jws {
      * Not a detail: letting `alg` in as a parameter is the straight road to `alg: none` and to
      * algorithm substitution. There is one algorithm here and it is hard-wired.
      */
-    suspend fun sign(
+    public suspend fun sign(
         key: SigningKey,
         claims: JsonObject,
     ): String {
