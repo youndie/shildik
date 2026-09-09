@@ -6,10 +6,10 @@ package io.github.youndie.shildik.server
  * `:server` is shared code and cannot know about katcher: that one is JVM-only. So the reporter
  * arrives from outside, just like observability (BACKLOG M-52).
  */
-fun interface ErrorReporter {
-    fun report(error: Throwable)
+public fun interface ErrorReporter {
+    public fun report(error: Throwable)
 
-    companion object {
+    public companion object {
         /**
          * The default is **the log**, not silence.
          *
@@ -21,9 +21,9 @@ fun interface ErrorReporter {
          * The log is not a replacement for telemetry but its lower bound: it is always there and it
          * goes nowhere over the network.
          */
-        val Logging = ErrorReporter { error -> log.error("unhandled failure", error) }
+        public val Logging: ErrorReporter = ErrorReporter { error -> log.error("unhandled failure", error) }
 
         /** Silence is for tests only — the ones that check precisely the absence of a reaction. */
-        val Silent = ErrorReporter { }
+        public val Silent: ErrorReporter = ErrorReporter { }
     }
 }

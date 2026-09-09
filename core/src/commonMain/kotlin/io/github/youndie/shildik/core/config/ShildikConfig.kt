@@ -7,7 +7,7 @@ package io.github.youndie.shildik.core.config
  * the default secret. A missing mandatory value brings the start down rather than surfacing on the
  * first request (see [require]).
  */
-data class ShildikConfig(
+public data class ShildikConfig(
     val issuer: String,
     val publicPort: Int,
     val managementPort: Int,

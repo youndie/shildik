@@ -3,7 +3,7 @@ package io.github.youndie.shildik.oidc
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class OidcConfig(
+public data class OidcConfig(
     val realm: String = "",
     val url: String = "",
     val clientId: String = "",

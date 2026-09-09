@@ -33,7 +33,7 @@ import org.koin.dsl.module
  * @param authMethods assembled **inside** the container: a password method needs repositories, and
  *   they live there.
  */
-fun runShildik(
+public fun runShildik(
     storage: (ShildikConfig) -> Module,
     observability: Application.() -> Unit = {},
     reporter: ErrorReporter = ErrorReporter.Logging,
@@ -55,7 +55,7 @@ fun runShildik(
 }
 
 /** The build version, for whatever a distribution attaches as observability. */
-val release: String get() = optional("SHILDIK_RELEASE") ?: "dev"
+public val release: String get() = optional("SHILDIK_RELEASE") ?: "dev"
 
 private fun loadConfig(): ShildikConfig {
     // A file has no account. `SHILDIK_DB_PATH` is what tells the two storages apart here, and it
@@ -92,4 +92,4 @@ private fun required(name: String): String =
  * empty" and "not set" are one thing here, and telling them apart would invent a third state for
  * nothing.
  */
-expect fun optional(name: String): String?
+public expect fun optional(name: String): String?

@@ -16,13 +16,13 @@ import dev.whyoleg.cryptography.random.CryptographyRandom
  * Should human-chosen secrets ever appear, this reasoning stops holding, and they will need their
  * own, deliberately slow path.
  */
-object Secrets {
+public object Secrets {
     private const val SECRET_BYTES = 32
 
     /** A new client secret. Shown once and never recoverable afterwards. */
-    fun generate(): String = CryptographyRandom.nextBytes(SECRET_BYTES).encodeBase64Url()
+    public fun generate(): String = CryptographyRandom.nextBytes(SECRET_BYTES).encodeBase64Url()
 
-    suspend fun hash(secret: String): String =
+    public suspend fun hash(secret: String): String =
         CryptographyProvider.Default
             .get(SHA256)
             .hasher()
@@ -37,7 +37,7 @@ object Secrets {
      * is hard to exploit, but the rule is cheap — and exceptions to it have a habit of migrating
      * to places where the secret is weaker.
      */
-    fun matches(
+    public fun matches(
         expectedHash: String,
         actualHash: String,
     ): Boolean {

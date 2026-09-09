@@ -17,11 +17,11 @@ import kotlin.time.Clock
  * The key is picked by `kid` rather than taken as the current one: after a rotation there are
  * tokens in circulation signed with the previous key, and it is still in JWKS (research §Risk 2).
  */
-class VerifyOwnTokenUseCase(
+public class VerifyOwnTokenUseCase(
     private val activeKey: ActiveSigningKey,
     private val clock: Clock = Clock.System,
 ) {
-    suspend operator fun invoke(
+    public suspend operator fun invoke(
         tenantId: TenantId,
         token: String,
     ): JsonObject? {

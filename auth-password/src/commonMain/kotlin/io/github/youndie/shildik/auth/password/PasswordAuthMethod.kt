@@ -26,7 +26,7 @@ import kotlin.time.Duration.Companion.minutes
  * exhausted — all of it is `null` on the way out. A difference in answers is itself a hint to
  * whoever is guessing: it tells them which addresses exist.
  */
-class PasswordAuthMethod(
+public class PasswordAuthMethod(
     private val tenants: TenantRepository,
     private val users: UserRepository,
     private val credentials: CredentialRepository,
@@ -35,7 +35,7 @@ class PasswordAuthMethod(
     private val maxFailures: Int = MAX_FAILURES,
     private val lockFor: Duration = LOCK_FOR,
 ) : InteractiveAuthMethod {
-    override val id = ID
+    override val id: String = ID
 
     override suspend fun authenticate(request: AuthRequest): AuthenticatedSubject? {
         val login = request[LOGIN_PARAM]?.trim()?.lowercase().orEmpty()
@@ -89,19 +89,19 @@ class PasswordAuthMethod(
         )
     }
 
-    companion object {
-        const val ID = "password"
-        const val LOGIN_PARAM = "login"
-        const val PASSWORD_PARAM = "password"
+    public companion object {
+        public const val ID: String = "password"
+        public const val LOGIN_PARAM: String = "login"
+        public const val PASSWORD_PARAM: String = "password"
 
         /** Five attempts — as many as a person spends on typos, and no more. */
-        const val MAX_FAILURES = 5
+        public const val MAX_FAILURES: Int = 5
 
         /**
          * Fifteen minutes: long enough for guessing to stop being worthwhile, short enough not to
          * turn the lockout into a denial of service against the person themselves.
          */
-        val LOCK_FOR = 15.minutes
+        public val LOCK_FOR: Duration = 15.minutes
 
         /**
          * A deliberately useless record, so the comparison runs even when there is nothing to

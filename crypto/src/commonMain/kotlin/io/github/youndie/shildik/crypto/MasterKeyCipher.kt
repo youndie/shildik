@@ -23,7 +23,7 @@ import dev.whyoleg.cryptography.random.CryptographyRandom
  * trying keys in turn relies on it. A key that fits differs from one that does not by the tag
  * matching, not by the plaintext looking plausible.
  */
-class MasterKeyCipher(
+public class MasterKeyCipher(
     masterKeys: List<String>,
 ) {
     init {
@@ -34,7 +34,7 @@ class MasterKeyCipher(
     private val rawKeys = masterKeys
 
     /** Encryption **always uses the first key**: that one is the current key. */
-    suspend fun encrypt(plain: ByteArray): ByteArray = cipher(rawKeys.first()).encrypt(plain)
+    public suspend fun encrypt(plain: ByteArray): ByteArray = cipher(rawKeys.first()).encrypt(plain)
 
     /**
      * Decryption tries the keys in list order.
@@ -42,7 +42,7 @@ class MasterKeyCipher(
      * The order matters: the current key comes first, so in the steady state the search ends on
      * the first attempt.
      */
-    suspend fun decrypt(cipherText: ByteArray): ByteArray {
+    public suspend fun decrypt(cipherText: ByteArray): ByteArray {
         var lastFailure: Throwable? = null
         for (key in rawKeys) {
             try {
@@ -63,7 +63,7 @@ class MasterKeyCipher(
         "ktlint:kapkan:swallowed-failure",
         "не расшифровалось текущим ключом — это и есть ответ `false`, а не потерянная ошибка",
     )
-    suspend fun isCurrent(cipherText: ByteArray): Boolean =
+    public suspend fun isCurrent(cipherText: ByteArray): Boolean =
         try {
             cipher(rawKeys.first()).decrypt(cipherText)
             true
@@ -88,7 +88,7 @@ class MasterKeyCipher(
                     .hash(masterKey.encodeToByteArray()),
             ).cipher()
 
-    companion object {
-        fun randomMasterKey(): String = CryptographyRandom.nextBytes(32).encodeBase64Url()
+    public companion object {
+        public fun randomMasterKey(): String = CryptographyRandom.nextBytes(32).encodeBase64Url()
     }
 }

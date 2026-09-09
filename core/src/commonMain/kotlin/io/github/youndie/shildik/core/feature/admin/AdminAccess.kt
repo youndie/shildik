@@ -18,7 +18,7 @@ import kotlinx.coroutines.sync.withLock
  * second pod and it must learn that an administrator already exists, otherwise bootstrap would come
  * back to life after a restart.
  */
-class AdminAccess(
+public class AdminAccess(
     private val bootstrapToken: String,
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
@@ -26,18 +26,18 @@ class AdminAccess(
     private val mutex = Mutex()
 
     /** A client with this role is the administrator; the contour tells no other roles apart. */
-    suspend fun isBootstrapPhase(): Boolean =
+    public suspend fun isBootstrapPhase(): Boolean =
         mutex.withLock {
             tenants.list().none { tenant -> clients.list(tenant.id).any { ADMIN_ROLE in it.roles } }
         }
 
-    suspend fun accepts(presented: String?): Boolean {
+    public suspend fun accepts(presented: String?): Boolean {
         if (presented.isNullOrBlank()) return false
         if (!isBootstrapPhase()) return false
         return Secrets.matches(bootstrapToken, presented)
     }
 
-    companion object {
-        const val ADMIN_ROLE = "shildik:admin"
+    public companion object {
+        public const val ADMIN_ROLE: String = "shildik:admin"
     }
 }

@@ -8,28 +8,28 @@ import kotlinx.serialization.Serializable
  * deployment rather than of the addresses, so only the paths live here.
  */
 @Resource("/admin")
-class AdminResource {
+public class AdminResource {
     @Resource("tenants")
-    class Tenants(
-        val parent: AdminResource = AdminResource(),
+    public class Tenants(
+        public val parent: AdminResource = AdminResource(),
     ) {
         @Resource("{tenant}")
-        class ByTenant(
-            val parent: Tenants = Tenants(),
-            val tenant: String,
+        public class ByTenant(
+            public val parent: Tenants = Tenants(),
+            public val tenant: String,
         ) {
             @Resource("clients")
-            class Clients(
-                val parent: ByTenant,
+            public class Clients(
+                public val parent: ByTenant,
             ) {
                 @Resource("{clientId}")
-                class ByClient(
-                    val parent: Clients,
-                    val clientId: String,
+                public class ByClient(
+                    public val parent: Clients,
+                    public val clientId: String,
                 ) {
                     @Resource("secret")
-                    class Secret(
-                        val parent: ByClient,
+                    public class Secret(
+                        public val parent: ByClient,
                     )
 
                     /**
@@ -38,13 +38,13 @@ class AdminResource {
                      * differently dangerous.
                      */
                     @Resource("import-secret")
-                    class ImportSecret(
-                        val parent: ByClient,
+                    public class ImportSecret(
+                        public val parent: ByClient,
                     )
 
                     @Resource("roles")
-                    class Roles(
-                        val parent: ByClient,
+                    public class Roles(
+                        public val parent: ByClient,
                     )
 
                     /**
@@ -55,8 +55,8 @@ class AdminResource {
                      * be a request somebody made on purpose.
                      */
                     @Resource("audiences")
-                    class Audiences(
-                        val parent: ByClient,
+                    public class Audiences(
+                        public val parent: ByClient,
                     )
 
                     /**
@@ -67,8 +67,8 @@ class AdminResource {
                      * passing.
                      */
                     @Resource("scopes")
-                    class ScopesResource(
-                        val parent: ByClient,
+                    public class ScopesResource(
+                        public val parent: ByClient,
                     )
                 }
             }
@@ -78,30 +78,30 @@ class AdminResource {
              * and is stored verbatim.
              */
             @Resource("users")
-            class Users(
-                val parent: ByTenant,
+            public class Users(
+                public val parent: ByTenant,
             ) {
                 /** A password is set through an address of its own: it is not part of a profile and never shown in one. */
                 @Resource("{userId}/password")
-                class Password(
-                    val parent: Users,
-                    val userId: String,
+                public class Password(
+                    public val parent: Users,
+                    public val userId: String,
                 )
             }
 
             @Resource("keys")
-            class Keys(
-                val parent: ByTenant,
+            public class Keys(
+                public val parent: ByTenant,
             ) {
                 @Resource("rotate")
-                class Rotate(
-                    val parent: Keys,
+                public class Rotate(
+                    public val parent: Keys,
                 )
 
                 @Resource("{kid}/retire")
-                class Retire(
-                    val parent: Keys,
-                    val kid: String,
+                public class Retire(
+                    public val parent: Keys,
+                    public val kid: String,
                 )
             }
         }
@@ -112,19 +112,19 @@ class AdminResource {
      * tenant one: there is a single master key for the whole service.
      */
     @Resource("keys/reencrypt")
-    class ReencryptKeys(
-        val parent: AdminResource = AdminResource(),
+    public class ReencryptKeys(
+        public val parent: AdminResource = AdminResource(),
     )
 }
 
 @Serializable
-data class TenantView(
+public data class TenantView(
     val realm: String,
     val registrationOpen: Boolean = true,
 )
 
 @Serializable
-data class ClientView(
+public data class ClientView(
     val clientId: String,
     val roles: List<String>,
     val public: Boolean = false,
@@ -137,14 +137,14 @@ data class ClientView(
 
 /** The response to creation and reissue: the **only** place a secret is ever visible. */
 @Serializable
-data class ClientWithSecret(
+public data class ClientWithSecret(
     val clientId: String,
     val secret: String? = null,
     val roles: List<String>,
 )
 
 @Serializable
-data class KeyView(
+public data class KeyView(
     val kid: String,
     val state: String,
     val createdAt: Long,
@@ -152,13 +152,13 @@ data class KeyView(
 )
 
 @Serializable
-data class ReencryptView(
+public data class ReencryptView(
     val reencrypted: Int,
     val untouched: Int,
 )
 
 @Serializable
-data class CreateTenantRequest(
+public data class CreateTenantRequest(
     val realm: String,
     /**
      * Whether a stranger who proved their identity is let in.
@@ -170,7 +170,7 @@ data class CreateTenantRequest(
 )
 
 @Serializable
-data class CreateClientRequest(
+public data class CreateClientRequest(
     val clientId: String,
     val roles: List<String> = emptyList(),
     /** A public client is a browser one. It gets no secret. */
@@ -193,13 +193,13 @@ data class CreateClientRequest(
 )
 
 @Serializable
-data class ExternalIdentityView(
+public data class ExternalIdentityView(
     val provider: String,
     val subject: String,
 )
 
 @Serializable
-data class UserView(
+public data class UserView(
     val id: String,
     val email: String? = null,
     val name: String? = null,
@@ -214,7 +214,7 @@ data class UserView(
  * person.
  */
 @Serializable
-data class ImportUserRequest(
+public data class ImportUserRequest(
     val id: String,
     val email: String? = null,
     val name: String? = null,
@@ -224,34 +224,34 @@ data class ImportUserRequest(
 )
 
 @Serializable
-data class ImportedUserView(
+public data class ImportedUserView(
     val id: String,
     /** `false` means such a user already existed, exactly like this. The migration report relies on it. */
     val changed: Boolean,
 )
 
 @Serializable
-data class ImportSecretRequest(
+public data class ImportSecretRequest(
     val secret: String,
 )
 
 @Serializable
-data class SetRolesRequest(
+public data class SetRolesRequest(
     val roles: List<String>,
 )
 
 @Serializable
-data class SetAudiencesRequest(
+public data class SetAudiencesRequest(
     val audiences: List<String>,
 )
 
 @Serializable
-data class SetScopesRequest(
+public data class SetScopesRequest(
     val scopes: List<String>,
 )
 
 @Serializable
-data class ErrorView(
+public data class ErrorView(
     val error: String,
 )
 
@@ -263,18 +263,18 @@ data class ErrorView(
  * be mistaken for a complete configuration.
  */
 @Serializable
-data class ExportedConfig(
+public data class ExportedConfig(
     val tenants: List<ExportedTenant>,
 )
 
 @Serializable
-data class ExportedTenant(
+public data class ExportedTenant(
     val realm: String,
     val clients: List<ExportedClient>,
 )
 
 @Serializable
-data class ExportedClient(
+public data class ExportedClient(
     val clientId: String,
     val roles: List<String>,
     /**
@@ -288,13 +288,13 @@ data class ExportedClient(
     val scopes: List<String> = emptyList(),
 )
 
-const val SECRET_PLACEHOLDER = "\${SECRET}"
+public const val SECRET_PLACEHOLDER: String = "\${SECRET}"
 
 /**
  * The password arrives **in the body**, not in the path and not in a query parameter: paths and
  * query strings end up in proxy logs, in shell history and in metrics.
  */
 @Serializable
-data class SetPasswordRequest(
+public data class SetPasswordRequest(
     val password: String,
 )

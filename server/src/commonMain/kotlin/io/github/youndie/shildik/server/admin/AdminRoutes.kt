@@ -64,7 +64,7 @@ import org.koin.core.Koin
  *
  * The URLs come from `:shared`: the CLI uses the same description, so the two cannot drift apart.
  */
-fun Application.adminRoutes(koin: Koin) {
+public fun Application.adminRoutes(koin: Koin) {
     val access = koin.get<AdminAccess>()
 
     routing {

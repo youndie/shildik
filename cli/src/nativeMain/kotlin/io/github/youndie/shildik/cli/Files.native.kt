@@ -16,7 +16,7 @@ import platform.posix.rewind
  * `java.io`.
  */
 @OptIn(ExperimentalForeignApi::class)
-actual fun readFile(path: String): String {
+public actual fun readFile(path: String): String {
     val file = fopen(path, "rb") ?: error("Could not open file: $path")
     try {
         fseek(file, 0, SEEK_END)
@@ -32,7 +32,7 @@ actual fun readFile(path: String): String {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-actual fun writeFile(
+public actual fun writeFile(
     path: String,
     content: String,
 ) {

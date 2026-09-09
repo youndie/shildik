@@ -4,7 +4,7 @@ import io.github.smyrgeorge.sqlx4k.Driver
 import io.github.youndie.shildik.core.model.TenantId
 import io.github.youndie.shildik.core.port.CredentialRepository
 
-class Sqlx4kCredentialRepository(
+public class Sqlx4kCredentialRepository(
     private val db: Driver,
 ) : CredentialRepository {
     override suspend fun find(

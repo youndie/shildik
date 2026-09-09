@@ -47,7 +47,7 @@ private const val REFRESH_MARGIN_MILLIS = 60_000L
  * JVM service does.
  */
 @OptIn(ExperimentalAtomicApi::class)
-class OidcAuthService(
+public class OidcAuthService(
     private val config: OidcConfig,
     // Supplying your own client is fine, but it **must** be able to parse JSON: the token
     // response is read through `ContentNegotiation`. The default client installs it; a client
@@ -71,12 +71,12 @@ class OidcAuthService(
     // underneath; on native it prints to stdout at the level from `KTOR_LOG_LEVEL`.
     private val logger = KtorSimpleLogger("OidcAuthService")
 
-    fun getBearerTokens(): BearerTokens? {
+    public fun getBearerTokens(): BearerTokens? {
         val token = currentToken.load()
         return token?.let { BearerTokens(it.accessToken, it.refreshToken) }
     }
 
-    suspend fun requestNewTokens(): AuthToken =
+    public suspend fun requestNewTokens(): AuthToken =
         tokenRefreshMutex.withLock {
             val existingToken = currentToken.load()
             if (existingToken != null && existingToken.expirationTimeMillis > now() + REFRESH_MARGIN_MILLIS) {

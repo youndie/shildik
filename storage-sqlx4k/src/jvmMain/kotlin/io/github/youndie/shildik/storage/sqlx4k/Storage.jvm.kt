@@ -3,7 +3,7 @@ package io.github.youndie.shildik.storage.sqlx4k
 import io.github.smyrgeorge.sqlx4k.Driver
 import io.github.smyrgeorge.sqlx4k.postgres.PostgreSQL
 
-actual fun postgres(
+public actual fun postgres(
     jdbcUrl: String,
     user: String,
     password: String,

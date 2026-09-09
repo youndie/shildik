@@ -10,4 +10,4 @@ import io.ktor.client.engine.HttpClientEngineFactory
  * management port through a port-forward (plain HTTP) this never showed up — it surfaced on the
  * first HTTPS call to somebody else's provider (services/shildik-cli.md §Quirks).
  */
-expect fun platformHttpEngine(): HttpClientEngineFactory<*>
+public expect fun platformHttpEngine(): HttpClientEngineFactory<*>

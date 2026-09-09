@@ -10,7 +10,7 @@ package io.github.youndie.shildik.crypto
  */
 private const val ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
-fun ByteArray.encodeBase64Url(): String {
+public fun ByteArray.encodeBase64Url(): String {
     val out = StringBuilder((size + 2) / 3 * 4)
     var i = 0
     while (i + 2 < size) {
@@ -41,7 +41,7 @@ fun ByteArray.encodeBase64Url(): String {
     return out.toString()
 }
 
-fun String.decodeBase64Url(): ByteArray {
+public fun String.decodeBase64Url(): ByteArray {
     val out = ArrayList<Byte>(length / 4 * 3)
     var buffer = 0
     var bits = 0

@@ -16,13 +16,13 @@ import kotlin.time.Instant
  * A token whose signature matched and whose lifetime has not run out. The existence of this object
  * is the assertion: parsed-but-unverified claims never leave the verifier.
  */
-class VerifiedToken internal constructor(
-    val rawToken: String,
-    val claims: JsonObject,
-    val azp: String?,
-    val email: String?,
-    val subject: String?,
-    val roles: Set<String>,
+public class VerifiedToken internal constructor(
+    public val rawToken: String,
+    public val claims: JsonObject,
+    public val azp: String?,
+    public val email: String?,
+    public val subject: String?,
+    public val roles: Set<String>,
 )
 
 /**

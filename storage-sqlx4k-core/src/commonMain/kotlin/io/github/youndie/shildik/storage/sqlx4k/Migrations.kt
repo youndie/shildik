@@ -17,7 +17,7 @@ import kotlinx.io.readString
  * migrations. Advisory locks are Postgres's, and imitating one here would mean inventing a
  * mechanism to protect against a deployment that is already impossible.
  */
-fun migrateUnlocked(
+public fun migrateUnlocked(
     db: Driver,
     path: String,
 ) {
@@ -31,7 +31,7 @@ fun migrateUnlocked(
  * [migrateUnlocked]: that one opens a `runBlocking` of its own, and nesting one inside the
  * transaction that holds the lock would block the thread the lock is waiting on.
  */
-suspend fun applyMigrations(
+public suspend fun applyMigrations(
     db: Driver,
     path: String,
 ) {

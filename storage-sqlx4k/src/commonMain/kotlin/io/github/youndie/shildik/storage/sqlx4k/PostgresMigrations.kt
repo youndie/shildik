@@ -26,7 +26,7 @@ import kotlinx.coroutines.runBlocking
  * once. There is deliberately **no** automatic detection here: guessing the state of somebody
  * else's migration history is more dangerous than stopping to look.
  */
-fun migrate(
+public fun migrate(
     db: Driver,
     path: String,
 ) {

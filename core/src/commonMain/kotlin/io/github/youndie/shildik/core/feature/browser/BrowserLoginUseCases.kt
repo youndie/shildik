@@ -31,6 +31,7 @@ import io.github.youndie.shildik.crypto.Pkce
 import io.github.youndie.shildik.crypto.Secrets
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -38,8 +39,8 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /** The request is refused by OAuth2 rules: what leaves is the spec's `error`, not our text. */
-class OAuthRejection(
-    val error: String,
+public class OAuthRejection(
+    public val error: String,
     override val message: String,
 ) : Exception(message)
 
@@ -55,7 +56,7 @@ class OAuthRejection(
  *   know whether it was Google or a link in an email, and must not know (feature-extensibility).
  */
 @OptIn(ExperimentalUuidApi::class)
-class AuthorizeUseCase(
+public class AuthorizeUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val users: UserRepository,
@@ -195,26 +196,26 @@ class AuthorizeUseCase(
         ).also { users.upsert(it) }
     }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val redirectUri: String,
-        val responseType: String,
-        val scope: String,
-        val state: String?,
-        val nonce: String?,
-        val codeChallenge: String,
-        val codeChallengeMethod: String?,
-        val methodId: String,
-        val methodParameters: Map<String, String>,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val redirectUri: String,
+        public val responseType: String,
+        public val scope: String,
+        public val state: String?,
+        public val nonce: String?,
+        public val codeChallenge: String,
+        public val codeChallengeMethod: String?,
+        public val methodId: String,
+        public val methodParameters: Map<String, String>,
     )
 
-    companion object {
+    public companion object {
         /**
          * A minute, not an hour: the code lives exactly as long as the redirect back takes.
          * Anything longer is a window for whoever peeked at it.
          */
-        val CODE_TTL = 1.minutes
+        public val CODE_TTL: Duration = 1.minutes
     }
 }
 
@@ -224,7 +225,7 @@ class AuthorizeUseCase(
  * Every client check happens **here**, before leaving for Google: bringing a person back with an
  * error after a round trip is the worst possible way to say that the `redirect_uri` is wrong.
  */
-class StartAuthorizationUseCase(
+public class StartAuthorizationUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val pending: PendingAuthorizationRepository,
@@ -291,27 +292,27 @@ class StartAuthorizationUseCase(
             )
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val redirectUri: String,
-        val responseType: String,
-        val scope: String,
-        val state: String?,
-        val nonce: String?,
-        val codeChallenge: String,
-        val codeChallengeMethod: String?,
-        val methodId: String,
-        val callbackUri: String,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val redirectUri: String,
+        public val responseType: String,
+        public val scope: String,
+        public val state: String?,
+        public val nonce: String?,
+        public val codeChallenge: String,
+        public val codeChallengeMethod: String?,
+        public val methodId: String,
+        public val callbackUri: String,
     )
 
-    companion object {
+    public companion object {
         /** Ten minutes: that is how long a person may fumble on Google's screen, and no more. */
-        val PENDING_TTL = 10.minutes
+        public val PENDING_TTL: Duration = 10.minutes
     }
 }
 
-data class StartedAuthorization(
+public data class StartedAuthorization(
     /** `null` means the method takes them nowhere: we will ask ourselves, with a form. */
     val upstreamUrl: String?,
     val state: String,
@@ -320,7 +321,7 @@ data class StartedAuthorization(
 /**
  * The return from an external provider: find the parked request and carry the sign-in to a code.
  */
-class CompleteAuthorizationUseCase(
+public class CompleteAuthorizationUseCase(
     private val tenants: TenantRepository,
     private val pending: PendingAuthorizationRepository,
     private val authorize: AuthorizeUseCase,
@@ -354,14 +355,14 @@ class CompleteAuthorizationUseCase(
             ).getOrThrow()
         }
 
-    class Params(
-        val realm: String,
-        val state: String,
-        val callbackParameters: Map<String, String>,
+    public class Params(
+        public val realm: String,
+        public val state: String,
+        public val callbackParameters: Map<String, String>,
     )
 }
 
-data class IssuedCode(
+public data class IssuedCode(
     val code: String,
     val redirectUri: String,
     val state: String?,
@@ -374,7 +375,7 @@ data class IssuedCode(
  * exchanges must not yield two tokens. The PKCE check runs **before** the mark — otherwise a wrong
  * verifier would burn somebody else's code.
  */
-class ExchangeCodeUseCase(
+public class ExchangeCodeUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val users: UserRepository,
@@ -455,18 +456,18 @@ class ExchangeCodeUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val code: String,
-        val redirectUri: String,
-        val codeVerifier: String?,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val code: String,
+        public val redirectUri: String,
+        public val codeVerifier: String?,
         /** RFC 8707 `resource`. Empty means "whatever this client is for" — see [Audiences]. */
-        val resources: Set<String> = emptySet(),
+        public val resources: Set<String> = emptySet(),
     )
 
-    companion object {
-        const val OFFLINE_ACCESS = "offline_access"
+    public companion object {
+        public const val OFFLINE_ACCESS: String = "offline_access"
     }
 }
 
@@ -482,7 +483,7 @@ class ExchangeCodeUseCase(
  * No client secret is asked for here: a public client is public, and demanding a secret from it
  * means demanding what does not exist. The binding is to the `clientId` and to the chain itself.
  */
-class RefreshTokensUseCase(
+public class RefreshTokensUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val users: UserRepository,
@@ -560,17 +561,17 @@ class RefreshTokensUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val clientId: String,
-        val refreshToken: String,
+    public class Params(
+        public val realm: String,
+        public val clientId: String,
+        public val refreshToken: String,
         /** RFC 8707 `resource`, asked again at every refresh — a token is addressed, not inherited. */
-        val resources: Set<String> = emptySet(),
+        public val resources: Set<String> = emptySet(),
     )
 
-    companion object {
+    public companion object {
         /** Thirty days: that is the life of "remember me", and there is no point holding longer. */
-        val REFRESH_TTL = 30.days
+        public val REFRESH_TTL: Duration = 30.days
 
         /**
          * How long after being presented a token is still accepted as a parallel refresh.
@@ -579,7 +580,7 @@ class RefreshTokensUseCase(
          * refresh the session on their own. Longer is a window for a leaked token, shorter brings
          * back sign-outs on a slow page.
          */
-        val CONCURRENT_REFRESH_WINDOW = 10.seconds
+        public val CONCURRENT_REFRESH_WINDOW: Duration = 10.seconds
     }
 }
 
@@ -593,7 +594,7 @@ class RefreshTokensUseCase(
  * else's `post_logout_redirect_uri` is an open redirect from our domain, that is, a ready-made
  * phishing tool: the link starts with the provider's address and leads anywhere at all.
  */
-class EndSessionUseCase(
+public class EndSessionUseCase(
     private val tenants: TenantRepository,
     private val clients: ClientRepository,
     private val refreshTokens: RefreshTokenRepository,
@@ -619,14 +620,14 @@ class EndSessionUseCase(
             if (client != null && client.allowsRedirect(requested)) requested else null
         }
 
-    class Params(
-        val realm: String,
-        val idTokenHint: String?,
-        val postLogoutRedirectUri: String?,
+    public class Params(
+        public val realm: String,
+        public val idTokenHint: String?,
+        public val postLogoutRedirectUri: String?,
     )
 }
 
-data class RefreshedSession(
+public data class RefreshedSession(
     val user: User,
     val clientId: String,
     val scope: String,
@@ -637,7 +638,7 @@ data class RefreshedSession(
     val permissions: Set<String> = emptySet(),
 )
 
-data class ExchangedCode(
+public data class ExchangedCode(
     val user: User,
     val scope: String,
     val nonce: String?,
@@ -664,7 +665,7 @@ data class ExchangedCode(
  * them about the lock leaves a person guessing for fifteen minutes. This gives away no account's
  * existence — the counter is kept for non-existent logins too.
  */
-class SubmitLoginUseCase(
+public class SubmitLoginUseCase(
     private val tenants: TenantRepository,
     private val pending: PendingAuthorizationRepository,
     private val attempts: LoginAttemptRepository,
@@ -711,27 +712,27 @@ class SubmitLoginUseCase(
             LoginOutcome.Success(issued)
         }
 
-    class Params(
-        val realm: String,
-        val state: String,
-        val formParameters: Map<String, String>,
+    public class Params(
+        public val realm: String,
+        public val state: String,
+        public val formParameters: Map<String, String>,
     )
 
-    companion object {
+    public companion object {
         /** The form field the attempt counter is keyed by. Matches `PasswordAuthMethod`. */
-        const val LOGIN_FIELD = "login"
+        public const val LOGIN_FIELD: String = "login"
     }
 }
 
-sealed interface LoginOutcome {
-    data class Success(
+public sealed interface LoginOutcome {
+    public data class Success(
         val issued: IssuedCode,
     ) : LoginOutcome
 
     /** Wrong login or wrong password — outwards these are one and the same state. */
-    data object Wrong : LoginOutcome
+    public data object Wrong : LoginOutcome
 
-    data object Locked : LoginOutcome
+    public data object Locked : LoginOutcome
 
-    data object Expired : LoginOutcome
+    public data object Expired : LoginOutcome
 }

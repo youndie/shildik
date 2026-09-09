@@ -15,9 +15,9 @@ package io.github.youndie.shildik.core.feature.auth
  * Registration is **explicit, in code**, not through `ServiceLoader`: that one is JVM-only (it
  * breaks shared code) and hides the dependency graph in the classpath just as well.
  */
-interface AuthMethod {
+public interface AuthMethod {
     /** The identifier used in configuration and URLs: `/auth/{id}/...`. */
-    val id: String
+    public val id: String
 
     /**
      * Checks what was presented and returns a confirmed identity — or `null` when it confirmed
@@ -28,7 +28,7 @@ interface AuthMethod {
      * code, identical for every method. Otherwise each new method would rewrite the rules from
      * scratch — which is exactly how divergences appear in other people's SPIs.
      */
-    suspend fun authenticate(request: AuthRequest): AuthenticatedSubject?
+    public suspend fun authenticate(request: AuthRequest): AuthenticatedSubject?
 }
 
 /**
@@ -43,7 +43,7 @@ interface AuthMethod {
  * stretching one method over two different scenarios: for redirecting methods `authenticate`
  * receives the parameters of the **return**, not of the original request.
  */
-interface RedirectingAuthMethod : AuthMethod {
+public interface RedirectingAuthMethod : AuthMethod {
     /**
      * Where to send the person.
      *
@@ -51,7 +51,7 @@ interface RedirectingAuthMethod : AuthMethod {
      * @param state our request identifier; the provider returns it unchanged, and by it we find
      *   what the person had started doing
      */
-    fun authorizationUrl(
+    public fun authorizationUrl(
         callbackUri: String,
         state: String,
     ): String
@@ -67,17 +67,17 @@ interface RedirectingAuthMethod : AuthMethod {
  * A marker without methods: what exactly to render is the server's knowledge, not the method's.
  * Otherwise a method would start depending on HTML and could not be tested without a server.
  */
-interface InteractiveAuthMethod : AuthMethod
+public interface InteractiveAuthMethod : AuthMethod
 
 /**
  * A sign-in in transport-independent terms: a method need not know about Ktor for it to be testable
  * without a server.
  */
-class AuthRequest(
-    val realm: String,
-    val parameters: Map<String, String>,
+public class AuthRequest(
+    public val realm: String,
+    public val parameters: Map<String, String>,
 ) {
-    operator fun get(name: String): String? = parameters[name]
+    public operator fun get(name: String): String? = parameters[name]
 }
 
 /**
@@ -88,7 +88,7 @@ class AuthRequest(
  * exactly why a migration from Keycloak must put **their** identifiers here: the pair (`sub`,
  * `iss`) is the linking key in the relying service (research §R10, task M-40).
  */
-data class AuthenticatedSubject(
+public data class AuthenticatedSubject(
     val externalId: String,
     val email: String?,
     val name: String? = null,
@@ -112,7 +112,7 @@ data class AuthenticatedSubject(
  * It is assembled where the distribution is assembled and knows only what was put into it. An empty
  * registry is a normal state: in M1–M3 there is no user sign-in at all.
  */
-class AuthMethodRegistry(
+public class AuthMethodRegistry(
     methods: List<AuthMethod> = emptyList(),
 ) {
     private val byId = methods.associateBy { it.id }
@@ -129,7 +129,7 @@ class AuthMethodRegistry(
         }
     }
 
-    fun find(id: String): AuthMethod? = byId[id]
+    public fun find(id: String): AuthMethod? = byId[id]
 
-    fun ids(): Set<String> = byId.keys
+    public fun ids(): Set<String> = byId.keys
 }

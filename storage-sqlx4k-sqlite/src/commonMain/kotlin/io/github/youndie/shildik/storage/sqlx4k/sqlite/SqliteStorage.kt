@@ -18,7 +18,7 @@ import io.github.smyrgeorge.sqlx4k.sqlite.sqlite as sqlx4kSqlite
  * a relative path stays relative to the process's directory, an absolute one keeps its leading
  * slash and reads as `sqlite:///var/lib/…`.
  */
-fun sqlite(
+public fun sqlite(
     databasePath: String,
     maxConnections: Int = SQLITE_POOL,
 ): Driver {
@@ -35,7 +35,7 @@ fun sqlite(
  * OS thread, a page cache and a prepared-statement cache of its own. The Postgres adapter's ten
  * are right for a server that answers them in parallel and wrong for a file.
  */
-const val SQLITE_POOL: Int = 2
+public const val SQLITE_POOL: Int = 2
 
 /**
  * The URL sqlx4k is given: the path, and nothing else.

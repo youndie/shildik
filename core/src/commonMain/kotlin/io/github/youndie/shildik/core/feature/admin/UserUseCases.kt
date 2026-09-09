@@ -22,7 +22,7 @@ import io.github.youndie.shildik.crypto.Passwords
  * import gets run twice if only because somebody interrupts the first one halfway, and the second
  * has to be safe.
  */
-class ImportUserUseCase(
+public class ImportUserUseCase(
     private val tenants: TenantRepository,
     private val users: UserRepository,
     private val transactions: TransactionManager,
@@ -53,24 +53,24 @@ class ImportUserUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val id: String,
-        val email: String?,
-        val name: String?,
-        val emailVerified: Boolean,
-        val enabled: Boolean,
-        val identities: Set<ExternalIdentity>,
+    public class Params(
+        public val realm: String,
+        public val id: String,
+        public val email: String?,
+        public val name: String?,
+        public val emailVerified: Boolean,
+        public val enabled: Boolean,
+        public val identities: Set<ExternalIdentity>,
     )
 }
 
-data class ImportedUser(
+public data class ImportedUser(
     val user: User,
     /** `false` means this user was already exactly like this; the import report relies on it. */
     val changed: Boolean,
 )
 
-class ListUsersUseCase(
+public class ListUsersUseCase(
     private val tenants: TenantRepository,
     private val users: UserRepository,
 ) : UseCase<String, List<User>> {
@@ -88,7 +88,7 @@ class ListUsersUseCase(
  * my password" is a separate flow with email, that is, one more subsystem for the sake of three
  * accounts (research-internal-login §2).
  */
-class SetPasswordUseCase(
+public class SetPasswordUseCase(
     private val tenants: TenantRepository,
     private val users: UserRepository,
     private val credentials: CredentialRepository,
@@ -115,24 +115,24 @@ class SetPasswordUseCase(
             }
         }
 
-    class Params(
-        val realm: String,
-        val userId: String,
-        val password: String,
+    public class Params(
+        public val realm: String,
+        public val userId: String,
+        public val password: String,
     )
 
-    companion object {
+    public companion object {
         /**
          * The identifier of the password sign-in method. Duplicated here deliberately: `:core` does
          * not depend on the method modules — they depend on it.
          */
-        const val PASSWORD_METHOD = "password"
+        public const val PASSWORD_METHOD: String = "password"
 
         /**
          * Below twelve characters PBKDF2 no longer saves you: guessing goes by dictionary, not by
          * alphabet. There is no upper bound — it would be meaningless and would only get in the way
          * of password managers.
          */
-        const val MIN_LENGTH = 12
+        public const val MIN_LENGTH: Int = 12
     }
 }

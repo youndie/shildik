@@ -17,13 +17,13 @@ import kotlinx.serialization.json.JsonObject
  * Exactly that shape is parsed and nothing more: `HS256`, claims without `iss` or `aud`. Keeping
  * it narrow removes the temptation to accept an arbitrary JWT here.
  */
-object Hs256 {
+public object Hs256 {
     private val hmac = CryptographyProvider.Default.get(HMAC)
 
     /**
      * @return the claims when the signature matches, `null` otherwise
      */
-    suspend fun verify(
+    public suspend fun verify(
         token: String,
         secret: String,
     ): JsonObject? {

@@ -10,13 +10,13 @@ import kotlin.coroutines.cancellation.CancellationException
  * see research §1.6. The signature matches the original deliberately, so that moving to the shared
  * artifact (once it grows linux targets) is a change of import.
  */
-fun interface UseCase<in P, out T> {
-    suspend operator fun invoke(params: P): Result<T>
+public fun interface UseCase<in P, out T> {
+    public suspend operator fun invoke(params: P): Result<T>
 }
 
 /** As in the original: cancelling a coroutine does not turn into a `Result.failure`. */
 @Suppress("RedundantSuspendModifier")
-suspend inline fun <T> suspendRunCatching(block: () -> T): Result<T> =
+public suspend inline fun <T> suspendRunCatching(block: () -> T): Result<T> =
     try {
         Result.success(block())
     } catch (e: CancellationException) {

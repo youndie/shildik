@@ -11,15 +11,15 @@ import com.github.ajalt.mordant.terminal.Terminal
  * shows up, the replacement is an implementation rather than a rewrite of the commands. Commands
  * do not know what prints their output.
  */
-interface Output {
-    fun table(
+public interface Output {
+    public fun table(
         headers: List<String>,
         rows: List<List<String>>,
     )
 
-    fun record(fields: List<Pair<String, String>>)
+    public fun record(fields: List<Pair<String, String>>)
 
-    fun secret(
+    public fun secret(
         label: String,
         value: String,
     )
@@ -31,17 +31,17 @@ interface Output {
      * object: two JSON objects in a row are parsed by no consumer at all. Found in an e2e run
      * where `--output json` printed two lines while creating a client.
      */
-    fun createdClient(
+    public fun createdClient(
         clientId: String,
         roles: List<String>,
         secret: String,
     )
 
-    fun message(text: String)
+    public fun message(text: String)
 }
 
 /** Machine-readable output. Required from the first version: the CLI lands in scripts before it lands in hands. */
-class JsonOutput : Output {
+public class JsonOutput : Output {
     override fun table(
         headers: List<String>,
         rows: List<List<String>>,
@@ -60,19 +60,19 @@ class JsonOutput : Output {
     override fun secret(
         label: String,
         value: String,
-    ) = record(listOf(label to value))
+    ): Unit = record(listOf(label to value))
 
     override fun createdClient(
         clientId: String,
         roles: List<String>,
         secret: String,
-    ) = record(listOf("clientId" to clientId, "roles" to roles.joinToString(" "), "secret" to secret))
+    ): Unit = record(listOf("clientId" to clientId, "roles" to roles.joinToString(" "), "secret" to secret))
 
-    override fun message(text: String) = record(listOf("message" to text))
+    override fun message(text: String): Unit = record(listOf("message" to text))
 }
 
 /** Human-facing output on Mordant — it arrives as a dependency of Clikt, no separate one needed. */
-class TerminalOutput(
+public class TerminalOutput(
     private val terminal: Terminal = Terminal(),
 ) : Output {
     override fun table(
@@ -114,7 +114,7 @@ class TerminalOutput(
         secret("secret", secret)
     }
 
-    override fun message(text: String) = terminal.println(text)
+    override fun message(text: String): Unit = terminal.println(text)
 }
 
 private fun String.jsonQuoted() = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""

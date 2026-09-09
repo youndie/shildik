@@ -21,20 +21,20 @@ import io.github.youndie.shildik.core.model.User
  * port synchronous "because the ORM is like that" — would drag an engine detail into the domain.
  */
 
-interface TenantRepository {
-    suspend fun byRealm(realm: String): Tenant?
+public interface TenantRepository {
+    public suspend fun byRealm(realm: String): Tenant?
 
-    suspend fun byId(id: TenantId): Tenant?
+    public suspend fun byId(id: TenantId): Tenant?
 
-    suspend fun list(): List<Tenant>
+    public suspend fun list(): List<Tenant>
 
-    suspend fun create(tenant: Tenant): Tenant
+    public suspend fun create(tenant: Tenant): Tenant
 }
 
-interface AuthorizationCodeRepository {
-    suspend fun save(code: AuthorizationCode)
+public interface AuthorizationCodeRepository {
+    public suspend fun save(code: AuthorizationCode)
 
-    suspend fun find(
+    public suspend fun find(
         tenantId: TenantId,
         codeHash: String,
     ): AuthorizationCode?
@@ -43,17 +43,17 @@ interface AuthorizationCodeRepository {
      * Mark it used. Returns `false` if the code was already marked — single use is built on this:
      * two simultaneous exchanges must not yield two tokens.
      */
-    suspend fun markUsed(
+    public suspend fun markUsed(
         tenantId: TenantId,
         codeHash: String,
     ): Boolean
 }
 
-interface PendingAuthorizationRepository {
-    suspend fun save(pending: PendingAuthorization)
+public interface PendingAuthorizationRepository {
+    public suspend fun save(pending: PendingAuthorization)
 
     /** Find and **delete**: a return from an external provider is single-use, like the code. */
-    suspend fun take(
+    public suspend fun take(
         tenantId: TenantId,
         state: String,
     ): PendingAuthorization?
@@ -64,52 +64,52 @@ interface PendingAuthorizationRepository {
      * The form needs this: a typo in a password must not send a person through the whole sign-in
      * again. The request is deleted only after a successful sign-in.
      */
-    suspend fun find(
+    public suspend fun find(
         tenantId: TenantId,
         state: String,
     ): PendingAuthorization?
 
-    suspend fun delete(
+    public suspend fun delete(
         tenantId: TenantId,
         state: String,
     )
 }
 
-interface RefreshTokenRepository {
-    suspend fun save(token: RefreshToken)
+public interface RefreshTokenRepository {
+    public suspend fun save(token: RefreshToken)
 
-    suspend fun find(
+    public suspend fun find(
         tenantId: TenantId,
         tokenHash: String,
     ): RefreshToken?
 
     /** Mark it used. `false` means it was already marked, that is, presented twice. */
-    suspend fun markUsed(
+    public suspend fun markUsed(
         tenantId: TenantId,
         tokenHash: String,
     ): Boolean
 
     /** Revoke the whole chain: presenting a spent token means a leak. */
-    suspend fun revokeFamily(
+    public suspend fun revokeFamily(
         tenantId: TenantId,
         family: String,
     )
 
     /** Revoke everything issued to this person for this client — on sign-out. */
-    suspend fun revokeForUser(
+    public suspend fun revokeForUser(
         tenantId: TenantId,
         clientId: String,
         userId: String,
     )
 }
 
-interface UserRepository {
-    suspend fun find(
+public interface UserRepository {
+    public suspend fun find(
         tenantId: TenantId,
         id: String,
     ): User?
 
-    suspend fun findByIdentity(
+    public suspend fun findByIdentity(
         tenantId: TenantId,
         identity: ExternalIdentity,
     ): User?
@@ -120,14 +120,14 @@ interface UserRepository {
      * Only a sign-in method that proves ownership of the email may use this
      * (feature-magic-link §2), which is why there is a single call site — in `AuthorizeUseCase`.
      */
-    suspend fun findByEmail(
+    public suspend fun findByEmail(
         tenantId: TenantId,
         email: String,
     ): User?
 
-    suspend fun list(tenantId: TenantId): List<User>
+    public suspend fun list(tenantId: TenantId): List<User>
 
-    suspend fun upsert(user: User)
+    public suspend fun upsert(user: User)
 }
 
 /**
@@ -138,53 +138,53 @@ interface UserRepository {
  * separate table makes that a property of the schema rather than of discipline
  * (research-internal-login §7).
  */
-interface CredentialRepository {
+public interface CredentialRepository {
     /** The hash in self-describing form, see `Passwords`. `null` means the person has none. */
-    suspend fun find(
+    public suspend fun find(
         tenantId: TenantId,
         userId: String,
     ): String?
 
-    suspend fun put(
+    public suspend fun put(
         tenantId: TenantId,
         userId: String,
         passwordHash: String,
     )
 
-    suspend fun delete(
+    public suspend fun delete(
         tenantId: TenantId,
         userId: String,
     )
 }
 
-interface ClientRepository {
-    suspend fun find(
+public interface ClientRepository {
+    public suspend fun find(
         tenantId: TenantId,
         clientId: String,
     ): Client?
 
-    suspend fun list(tenantId: TenantId): List<Client>
+    public suspend fun list(tenantId: TenantId): List<Client>
 
-    suspend fun upsert(client: Client)
+    public suspend fun upsert(client: Client)
 
-    suspend fun delete(
+    public suspend fun delete(
         tenantId: TenantId,
         clientId: String,
     )
 }
 
-interface KeyRepository {
+public interface KeyRepository {
     /** The key we sign with now. Exactly one per tenant — or none, if it has not been created. */
-    suspend fun active(tenantId: TenantId): SigningKeyRecord?
+    public suspend fun active(tenantId: TenantId): SigningKeyRecord?
 
     /** Everything that belongs in JWKS: `ACTIVE` and `RETIRING` (feature-signing-keys §2). */
-    suspend fun published(tenantId: TenantId): List<SigningKeyRecord>
+    public suspend fun published(tenantId: TenantId): List<SigningKeyRecord>
 
-    suspend fun all(tenantId: TenantId): List<SigningKeyRecord>
+    public suspend fun all(tenantId: TenantId): List<SigningKeyRecord>
 
-    suspend fun save(record: SigningKeyRecord)
+    public suspend fun save(record: SigningKeyRecord)
 
-    suspend fun updateState(
+    public suspend fun updateState(
         tenantId: TenantId,
         kid: String,
         state: KeyState,
@@ -192,15 +192,15 @@ interface KeyRepository {
 }
 
 /** Storage for failure counters: it cannot be kept in memory — there is more than one pod. */
-interface LoginAttemptRepository {
-    suspend fun find(
+public interface LoginAttemptRepository {
+    public suspend fun find(
         tenantId: TenantId,
         login: String,
     ): LoginAttempt?
 
-    suspend fun save(attempt: LoginAttempt)
+    public suspend fun save(attempt: LoginAttempt)
 
-    suspend fun reset(
+    public suspend fun reset(
         tenantId: TenantId,
         login: String,
     )
@@ -213,7 +213,7 @@ interface LoginAttemptRepository {
  * and answering that by selecting tenants would tie the probe to the model — change the model and
  * the meaning of the probe changes. An implementation makes the cheapest query it can.
  */
-fun interface StorageHealth {
+public fun interface StorageHealth {
     /** `false` rather than an exception: an unreachable database is an expected probe answer. */
-    suspend fun check(): Boolean
+    public suspend fun check(): Boolean
 }

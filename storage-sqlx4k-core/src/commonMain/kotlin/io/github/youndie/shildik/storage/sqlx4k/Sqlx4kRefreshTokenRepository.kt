@@ -7,7 +7,7 @@ import io.github.youndie.shildik.core.port.RefreshTokenRepository
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-class Sqlx4kRefreshTokenRepository(
+public class Sqlx4kRefreshTokenRepository(
     private val db: Driver,
 ) : RefreshTokenRepository {
     override suspend fun save(token: RefreshToken) {

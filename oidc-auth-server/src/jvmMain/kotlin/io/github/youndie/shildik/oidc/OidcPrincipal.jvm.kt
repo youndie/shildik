@@ -18,13 +18,13 @@ import kotlinx.serialization.json.JsonObject
  *   already happened in common code, and `JWT.decode` is needed only for the shape consumers
  *   expect.
  */
-actual class OidcPrincipal : RoleBasedPrincipal {
-    val originalPrincipal: JWTPrincipal
-    actual val azp: String
-    actual val email: String?
+public actual class OidcPrincipal : RoleBasedPrincipal {
+    public val originalPrincipal: JWTPrincipal
+    public actual val azp: String
+    public actual val email: String?
     actual override val roles: Set<String>
-    actual val subject: String?
-    actual val claims: JsonObject
+    public actual val subject: String?
+    public actual val claims: JsonObject
 
     internal actual constructor(verified: VerifiedToken) {
         originalPrincipal = JWTPrincipal(JWT.decode(verified.rawToken))
@@ -42,7 +42,7 @@ actual class OidcPrincipal : RoleBasedPrincipal {
      * Building a principal by hand — how a consumer's tests create one when substituting their own
      * authentication. This constructor exists for them.
      */
-    constructor(
+    public constructor(
         originalPrincipal: JWTPrincipal,
         azp: String,
         email: String?,
@@ -56,7 +56,7 @@ actual class OidcPrincipal : RoleBasedPrincipal {
         this.claims = JsonObject(emptyMap())
     }
 
-    val payload: Payload get() = originalPrincipal.payload
+    public val payload: Payload get() = originalPrincipal.payload
 
     override fun toString(): String = "OidcPrincipal(azp=$azp, email=$email, roles=$roles)"
 }

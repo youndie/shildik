@@ -8,4 +8,4 @@ import io.ktor.client.engine.curl.Curl
  * fully self-contained. Ktor has no TLS-capable alternative on native, and without TLS the CLI
  * cannot read somebody else's provider.
  */
-actual fun platformHttpEngine(): HttpClientEngineFactory<*> = Curl
+public actual fun platformHttpEngine(): HttpClientEngineFactory<*> = Curl

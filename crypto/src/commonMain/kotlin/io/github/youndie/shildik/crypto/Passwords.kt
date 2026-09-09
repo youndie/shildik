@@ -20,14 +20,14 @@ import dev.whyoleg.cryptography.random.CryptographyRandom
  * year from now would mean migrating every record at once — and the same applies to reading a
  * different format should one appear.
  */
-object Passwords {
+public object Passwords {
     /**
      * What OWASP recommends for PBKDF2-HMAC-SHA512 (2023).
      *
      * The number is stored in the record, so it can be changed at any time: existing passwords go
      * on being verified with the value they were written with, new ones get the new value.
      */
-    const val DEFAULT_ITERATIONS = 210_000
+    public const val DEFAULT_ITERATIONS: Int = 210_000
 
     private const val SALT_BYTES = 16
     private const val HASH_BYTES = 64
@@ -39,7 +39,7 @@ object Passwords {
      * One column instead of four, because there is no reason to read these fields separately and
      * every reason to keep them from drifting apart when written.
      */
-    suspend fun hash(
+    public suspend fun hash(
         password: String,
         iterations: Int = DEFAULT_ITERATIONS,
     ): String {
@@ -55,7 +55,7 @@ object Passwords {
      * Verification. A record that fails to parse yields `false` rather than an exception: to
      * whoever is presenting the password, a corrupted row must look exactly like a wrong password.
      */
-    suspend fun verify(
+    public suspend fun verify(
         password: String,
         stored: String,
     ): Boolean {

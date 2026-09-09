@@ -13,9 +13,9 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.bearer
 import kotlinx.serialization.json.JsonObject
 
-const val JWT_AUTH_OIDC = "jwt-auth-oidc"
+public const val JWT_AUTH_OIDC: String = "jwt-auth-oidc"
 
-data class AuthData(
+public data class AuthData(
     val roles: Set<String>,
     val email: String?,
     val azp: String?,
@@ -29,14 +29,14 @@ data class AuthData(
  * implements `RoleBasedPrincipal` so `withRole(...)` keeps working. Neither exists on native and
  * neither can — both are JVM libraries. What is declared here is what everyone uses.
  */
-expect class OidcPrincipal internal constructor(
+public expect class OidcPrincipal internal constructor(
     verified: VerifiedToken,
 ) {
-    val azp: String
-    val email: String?
-    val roles: Set<String>
-    val subject: String?
-    val claims: JsonObject
+    public val azp: String
+    public val email: String?
+    public val roles: Set<String>
+    public val subject: String?
+    public val claims: JsonObject
 }
 
 /**
@@ -55,7 +55,7 @@ expect class OidcPrincipal internal constructor(
  * @param engine the HTTP client engine; tests need it to substitute JWKS. In production the
  *   platform default is used — CIO on the JVM, curl in native builds.
  */
-fun Application.configureAuth(
+public fun Application.configureAuth(
     config: OidcConfig,
     engine: HttpClientEngine? = null,
     validate: (AuthData) -> Boolean,

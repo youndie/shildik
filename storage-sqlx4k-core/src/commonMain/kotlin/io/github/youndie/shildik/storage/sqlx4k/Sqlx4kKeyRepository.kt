@@ -10,7 +10,7 @@ import io.github.youndie.shildik.core.port.KeyRepository
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-class Sqlx4kKeyRepository(
+public class Sqlx4kKeyRepository(
     private val db: Driver,
 ) : KeyRepository {
     override suspend fun active(tenantId: TenantId): SigningKeyRecord? =

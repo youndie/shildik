@@ -21,12 +21,12 @@ import kotlin.time.Clock
  * storage rather than being invented here. For those imported from Keycloak it is their previous
  * identifier, otherwise the relying service will not recognise the owner (feature-user-import §2).
  */
-class IssueUserTokensUseCase(
+public class IssueUserTokensUseCase(
     private val activeKey: ActiveSigningKey,
     private val issuers: IssuerResolver,
     private val clock: Clock = Clock.System,
 ) {
-    suspend operator fun invoke(
+    public suspend operator fun invoke(
         tenant: Tenant,
         user: User,
         clientId: String,
@@ -99,7 +99,7 @@ class IssueUserTokensUseCase(
     }
 }
 
-data class UserTokens(
+public data class UserTokens(
     val accessToken: String,
     val idToken: String,
     val expiresInSeconds: Long,
