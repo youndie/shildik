@@ -5,6 +5,7 @@ import io.github.youndie.shildik.core.model.TenantId
 import io.github.youndie.shildik.crypto.Jws
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 
 /**
@@ -32,7 +33,21 @@ public class VerifyOwnTokenUseCase(
         // throws on a signature of the wrong length (`Bad signature length: got 261 but was
         // expecting 256`), and letting that escape turned a forged token into a 500 and a report to
         // monitoring — while the client is owed a plain 401.
-        if (!runCatching { key.verify(parsed.signingInput, parsed.signature) }.getOrDefault(false)) return null
+        // Отмена — не «токен не наш». `getOrDefault(false)` отвечал `null` на отменённую проверку,
+        // и сервер слал 401 клиенту, который уже ушёл.
+        @Suppress(
+            "ktlint:kapkan:swallowed-failure",
+            "неудача проверки подписи и есть ответ «токен не наш» — так сказано в комментарии выше",
+        )
+        val verified =
+            try {
+                key.verify(parsed.signingInput, parsed.signature)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Throwable) {
+                false
+            }
+        if (!verified) return null
 
         val exp = (parsed.claims["exp"] as? JsonPrimitive)?.content?.toLongOrNull() ?: return null
         if (exp <= clock.now().epochSeconds) return null

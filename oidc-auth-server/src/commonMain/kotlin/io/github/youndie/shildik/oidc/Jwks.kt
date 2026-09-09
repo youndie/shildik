@@ -6,6 +6,7 @@ import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -82,7 +83,20 @@ internal class JwksSource(
      * are already in the cache, so the cost of that retry is only paid for unknown `kid`s.
      */
     private suspend fun load() {
-        val body = runCatching { client.get(jwksUrl()).bodyAsText() }.getOrNull() ?: return
+        // Отмена — не «провайдер не отдал ключи»: молча вернувшись, отменённая загрузка оставляла
+        // кэш пустым и выглядела как неудача сети.
+        @Suppress(
+            "ktlint:kapkan:swallowed-failure",
+            "неудача не считается перезагрузкой: loadedAt не двигается и следующий запрос повторит",
+        )
+        val body =
+            try {
+                client.get(jwksUrl()).bodyAsText()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Throwable) {
+                return
+            }
         val loaded = VerificationKey.fromJwks(body)
         if (loaded.isEmpty()) return
 

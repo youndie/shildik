@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Where the provider keeps its keys — asked, not assumed.
@@ -44,14 +45,24 @@ internal class EndpointAddresses(
         return mutex.withLock {
             discovered?.let { return@withLock it }
 
+            // Отмена — не «дискавери не ответил»: без этого отменённый запрос молча уводил в
+            // запасной путь, как если бы провайдер оказался недоступен.
+            @Suppress(
+                "ktlint:kapkan:swallowed-failure",
+                "недоступное дискавери и есть повод взять составленный адрес, а не отказать",
+            )
             val fromDiscovery =
-                runCatching {
+                try {
                     val body = client.get(discoveryUrl(base, realm)).bodyAsText()
                     (Json.parseToJsonElement(body) as JsonObject)["jwks_uri"]
                         ?.let { it as? JsonPrimitive }
                         ?.content
                         ?.takeIf { it.isNotBlank() }
-                }.getOrNull()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Throwable) {
+                    null
+                }
 
             fromDiscovery?.also { discovered = it } ?: certsUrl(base, realm)
         }

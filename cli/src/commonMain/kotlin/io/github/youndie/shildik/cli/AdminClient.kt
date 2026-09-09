@@ -239,6 +239,11 @@ public class AdminClient(
         // The domain message is carried through as it is: it explains why the request was
         // refused, and inventing our own wording means diverging from the server.
         val text = bodyAsText()
+
+        @Suppress(
+            "ktlint:kapkan:cancellation-swallowed",
+            "тело уже прочитано выше; разбор JSON синхронный и не приостанавливается",
+        )
         val reason = runCatching { json.decodeFromString(ErrorView.serializer(), text).error }.getOrNull()
         throw AdminApiException(status.value, reason?.ifBlank { null } ?: text.ifBlank { "error ${status.value}" })
     }

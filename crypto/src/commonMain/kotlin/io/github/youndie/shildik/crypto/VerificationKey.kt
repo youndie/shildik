@@ -46,6 +46,10 @@ public class VerificationKey(
             text("alg")?.let { if (it != "RS256") return null }
             text("use")?.let { if (it != "sig") return null }
 
+            @Suppress(
+                "ktlint:kapkan:cancellation-swallowed",
+                "разбор JWK на месте: провайдер suspend по сигнатуре, но не приостанавливается",
+            )
             val decoded =
                 runCatching {
                     CryptographyProvider.Default
@@ -67,11 +71,19 @@ public class VerificationKey(
          * that is no different from "there is no key with this `kid`".
          */
         public suspend fun fromJwks(json: String): List<VerificationKey> {
+            @Suppress(
+                "ktlint:kapkan:cancellation-swallowed",
+                "разбор JSON синхронный, точки приостановки внутри нет",
+            )
             val keys =
                 runCatching {
                     (Json.parseToJsonElement(json) as JsonObject)["keys"]?.jsonArray
                 }.getOrNull() ?: return emptyList()
 
+            @Suppress(
+                "ktlint:kapkan:cancellation-swallowed",
+                "fromJwk разбирает готовый JsonObject на месте, не приостанавливаясь",
+            )
             return keys.mapNotNull { runCatching { fromJwk(it.jsonObject) }.getOrNull() }
         }
     }

@@ -48,6 +48,10 @@ public abstract class ApiCommand(
      * step named "create the client" stays green while no client was created
      * (services/shildik-cli.md §4).
      */
+    @Suppress(
+        "ktlint:kapkan:cancellation-swallowed",
+        "верхний обработчик команды CLI внутри runBlocking: эту область никто не отменяет",
+    )
     protected fun run(block: suspend (AdminClient) -> Unit) {
         runBlocking {
             try {
