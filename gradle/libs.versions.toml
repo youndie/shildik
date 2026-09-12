@@ -1,6 +1,6 @@
 [versions]
 # The shared build conventions. One number: every sborka plugin below takes its version from here.
-sborka = "0.4.0.43"
+sborka = "0.4.0.58"
 kotlin = "2.4.10"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
@@ -37,6 +37,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 
 [plugins]
 sborkaKmp = { id = "io.github.youndie.sborka.kmp", version.ref = "sborka" }
+sborkaParity = { id = "io.github.youndie.sborka.parity", version.ref = "sborka" }
 sborkaJvm = { id = "io.github.youndie.sborka.jvm", version.ref = "sborka" }
 sborkaLint = { id = "io.github.youndie.sborka.lint", version.ref = "sborka" }
 sborkaPublish = { id = "io.github.youndie.sborka.publish", version.ref = "sborka" }

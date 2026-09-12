@@ -2,8 +2,17 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("io.github.youndie.sborka.kmp")
     id("io.github.youndie.sborka.lint")
+    id("io.github.youndie.sborka.parity")
     id("io.github.youndie.sborka.publish")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+// WHERE THE PLATFORM PROBE LOOKS. `localhost` is the name it resolves; the port is bound by the test
+// itself, so the suite needs nothing running beside it. `PlatformTest` says which of the three
+// targets this module probes is the one that actually ships.
+parityProbe {
+    host = "localhost"
+    port = 0
 }
 
 kotlin {
