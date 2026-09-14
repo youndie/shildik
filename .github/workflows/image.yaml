@@ -43,23 +43,27 @@ jobs:
         include:
           - module: distribution
             binary: shildik.kexe
+            migrations: storage-sqlx4k/src/commonMain/resources/migrations
             image: shildik
             description: OpenID Connect provider — reference distribution
           - module: distribution-sqlite
             binary: shildik-sqlite.kexe
+            migrations: storage-sqlx4k-sqlite/src/commonMain/resources/migrations
             image: shildik-sqlite
             description: OpenID Connect provider — reference distribution, storing its state in SQLite
 
     steps:
       - uses: actions/checkout@v7
 
-      # Java, Gradle and the ~/.konan cache in one step. That cache is not an optimisation to
-      # taste: the Kotlin/Native toolchain is around a gigabyte and is a fresh download on every
-      # cold runner without it.
-      - uses: youndie/sborka/.github/actions/setup-kotlin@main
-        with:
-          konan-cache: "true"
-
+      # NO JAVA, NO GRADLE AND NO `~/.konan` CACHE ON THE RUNNER ANY MORE. The binary is compiled
+      # inside the image (#48), which is what makes the static link and the `scratch` base possible,
+      # and it costs this job the caches: every run downloads the Kotlin/Native toolchain again and
+      # compiles everything. That is worth about a minute and a half — the last cached run of this
+      # workflow took 3m15s, and the same build with nothing kept takes about four and a half.
+      #
+      # NOTHING IS EXERCISED HERE EITHER, and that is on purpose. `image-smoke.yaml` builds both
+      # images and signs a person in through each of them on every pull request and every push to
+      # `main`, so a tag placed on `main` names a commit whose images have already been run.
 
       # **The commit tag is the one that is always right.** A run number of this workflow would
       # look like a version and mean nothing: the libraries inside carry `0.2.0.<publish run>`, and
@@ -93,11 +97,6 @@ jobs:
           if [ "$LATEST" = "true" ]; then tags="$tags,$REPO:latest"; fi
           echo "value=$tags" >> "$GITHUB_OUTPUT"
 
-      # Gradle builds the binary and assembles the context; docker only builds. Compiling inside
-      # the Dockerfile would throw away the Gradle cache on every run.
-      - name: Assemble the image context
-        run: ./gradlew :${{ matrix.module }}:imageContext --console=plain
-
       - name: Log in to ghcr
         uses: docker/login-action@v4
         with:
@@ -107,16 +106,24 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      # linux/amd64 only, and deliberately: the binary in the context was linked for linuxX64.
+      # linux/amd64 only, and deliberately: the Dockerfile links for linuxX64 and nothing else.
       # A multi-arch manifest would need a second Kotlin/Native target and a second link — worth
       # doing when somebody asks for arm64, not before.
+      #
+      # The context is the REPOSITORY ROOT, because the Dockerfile compiles what is in it. `.git`
+      # travels with it on purpose: `/version` reports the commit, and `.dockerignore` says why
+      # nothing git tracks may be excluded.
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.module }}/build/image
+          context: .
+          file: docker/native.Dockerfile
           platforms: linux/amd64
           push: true
-          build-args: BINARY=${{ matrix.binary }}
+          build-args: |
+            MODULE=${{ matrix.module }}
+            BINARY=${{ matrix.binary }}
+            MIGRATIONS=${{ matrix.migrations }}
           tags: ${{ steps.tags.outputs.value }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}

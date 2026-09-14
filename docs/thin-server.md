@@ -137,17 +137,43 @@ breaking".
 
 ## The image
 
-The Dockerfile in [`docker/native.Dockerfile`](../docker/native.Dockerfile) takes a binary and a
-`migrations` directory and produces a distroless image with two ports. It is a recipe, not a
-framework: copy it, or copy the eight lines of it you need.
+The Dockerfile in [`docker/native.Dockerfile`](../docker/native.Dockerfile) **compiles the binary
+and then puts it on nothing**: the runtime stage is `FROM scratch`, with the executable linked
+statically and five files carried across from the build stage. It is a recipe, not a framework —
+copy it, or copy the lines of it you need.
 
 ```bash
-./gradlew :distribution:image     # in this repository: context + docker build
+./gradlew :distribution:image     # in this repository: one docker build, a few minutes
 ```
 
-The reference image is 44 MB. Run it against a Postgres and it answers discovery, issues a
-service token and serves JWKS — checked, under qemu on an ARM laptop, with the container holding
-54 MiB and Ktor reporting `Application started in 0.027 seconds`:
+**Two things about that are worth taking rather than admiring.** The first is that compiling inside
+the image is what *allows* the static link: link on a build machine and the glibc it used has to be
+paired with the glibc of whatever base image runs it — a mismatch that builds fine and dies at exec
+with `GLIBC_2.38 not found`. There is no runtime image here to be paired with. What it costs is the
+Gradle and `~/.konan` caches: every build starts from nothing.
+
+The second is that **static does not mean self-contained**, which is the trap this class of image
+is built on. glibc has no character-set converters of its own: `iconv_open` loads them with
+`dlopen`, Ktor's charset layer on Kotlin/Native is glibc `iconv`, and `encodeURLParameter` is on the
+path of every authorization redirect. An image with the binary alone answers both probes, renders
+the sign-in page, and throws `Failed to open iconv for charset UTF-8` when the form is posted —
+measured here by building exactly that. Hence the loader, `libc.so.6`, `/etc/ld.so.cache` and the
+whole gconv tree, taken **from the build stage**, because the shared glibc a static binary `dlopen`s
+must be the same build as the `libc.a` it was linked against. The fifth file is the CA bundle, for
+`auth-google`.
+
+`dev/image-smoke.sh` is the check that corresponds: it signs a person in and requires an
+authorization code, because everything short of that passes on an image that cannot.
+
+The reference image is **11 301 385 bytes to pull, against 16 243 174** for the distroless image it
+replaces — the SQLite one, 12 002 318 against 16 861 558. Each pair is the same code, measured on
+one host: the published images compared against were built from the commit this work sits on, with
+one chart-only commit between them. The number is the compressed content — what a `pull` transfers,
+which is not what `docker images` reports on a host with the overlay2 driver. The binary itself grew,
+since glibc, libstdc++ and libgcc moved inside it; the base image under it went away by more.
+
+Run it against a Postgres and it starts in 0.004 s, answers discovery, issues a service token and
+serves JWKS:
 
 ```bash
 docker network create idp
@@ -160,7 +186,7 @@ docker run -d --name idp --network idp -p 8080:8080 -p 9000:9000 \
   -e SHILDIK_JDBC_URL=jdbc:postgresql://pg:5432/shildik \
   -e SHILDIK_DB_USER=shildik -e SHILDIK_DB_PASSWORD=secret \
   -e SHILDIK_BOOTSTRAP_TOKEN=bootstrap \
-  shildik:0.2.0
+  shildik:0.4.0
 
 curl -X POST localhost:9000/admin/tenants -H 'Authorization: Bearer bootstrap' \
   -H 'Content-Type: application/json' -d '{"realm":"main"}'
@@ -179,12 +205,17 @@ docker run -d --name idp -p 8080:8080 -p 9000:9000 -v shildik:/data \
   -e SHILDIK_MASTER_KEYS=change-me \
   -e SHILDIK_DB_PATH=/data/shildik.db \
   -e SHILDIK_BOOTSTRAP_TOKEN=bootstrap \
-  shildik-sqlite:0.2.0
+  shildik-sqlite:0.4.0
 ```
 
-That image is 46 MB, starts in 0.035 s, and answers discovery, issues a service token and serves
-JWKS — checked under qemu on an ARM laptop, restart included: the tenant, the client and the
-signing key were all still there afterwards.
+That image is 12 MB, starts in 0.004 s, and signs a person in from an empty database — tenant,
+client, user, password, the rendered form and an authorization code — which is what
+`dev/image-smoke.sh` does to it and to the Postgres one on every pull request.
+
+On `scratch` the only directory in the image is its `WORKDIR`, and `/data` is not it. That turns out
+not to matter — the process creates the directory of `SHILDIK_DB_PATH`, checked by starting this
+image with no volume at all — but a database inside the container's own filesystem is a database
+that leaves with the container, so the `-v` above is not optional for anything but a trial.
 
 **Backing that volume up is not `cp` of one file.** The driver runs SQLite in WAL mode, so the
 database is three files — `shildik.db`, `-wal` and `-shm` — and the newest writes live in the WAL
@@ -192,10 +223,11 @@ until a checkpoint. A copy of the first one alone, taken from a running provider
 missing whatever happened recently. Copy all three with the process stopped, or let SQLite make the
 copy (`VACUUM INTO`).
 
-For your own build the context is three things and nothing else — the Dockerfile, the binary, and
-the schema. Take the schema out of the storage artifact rather than keeping a copy: it is inside
-`storage-sqlx4k-jvm.jar` under `migrations/`, and a second copy of a schema drifts from the first
-in silence.
+For your own build the context is the source tree, and the three arguments the Dockerfile takes say
+which distribution to make of it: the module, the executable it links, and where the schema lives.
+Take the schema out of the storage module you actually depend on rather than keeping a copy — a
+second copy of a schema drifts from the first in silence, and the two dialects here are not
+interchangeable.
 
 ## What this does not save you from
 

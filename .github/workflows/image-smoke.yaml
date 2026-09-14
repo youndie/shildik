@@ -1,0 +1,155 @@
+name: Image smoke
+
+# CI compiles the code and runs the tests; until this job, nothing ever ran the thing that gets
+# deployed. That gap stopped being tolerable when the image became `FROM scratch` (#48): the runtime
+# has no shell and no base system, so what it does or does not contain cannot be asked — it can only
+# be exercised. A missing gconv module or a missing CA bundle produces an image that builds, starts,
+# and answers both probes with 200.
+#
+# THE OTHER HALF OF WHY THIS RUNS ON PULL REQUESTS. The static link rests on
+# `-Xoverride-konan-properties`, five keys of `konan.properties` that JetBrains may change in any
+# patch release. It breaks loudly — as a link error — but only where the image is built, so a Kotlin
+# bump that is green everywhere else would otherwise reach a release before anything noticed.
+#
+# It costs less than the recipe it was copied from predicted: 4m17s and 4m30s for the two legs, in
+# parallel, on a standard runner — everything compiled from nothing, toolchain download included.
+# The path filter stays anyway, because a change to the charts or the docs cannot affect any of it.
+
+# The two lists are the same list written twice: GitHub's workflow parser does not resolve YAML
+# anchors, and one that silently expanded to nothing would turn the filter into "never run".
+on:
+  pull_request:
+    paths:
+      - '**/*.kt'
+      - '**/*.kts'
+      - '**/*.sql'
+      - docker/native.Dockerfile
+      - dev/image-smoke.sh
+      - gradle/**
+      - gradle.properties
+      - .dockerignore
+      - .github/workflows/image-smoke.yaml
+  push:
+    branches: [main]
+    paths:
+      - '**/*.kt'
+      - '**/*.kts'
+      - '**/*.sql'
+      - docker/native.Dockerfile
+      - dev/image-smoke.sh
+      - gradle/**
+      - gradle.properties
+      - .dockerignore
+      - .github/workflows/image-smoke.yaml
+
+concurrency:
+  group: image-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    # Named by the storage, or the check is called after a file path — and a required check whose
+    # name contains `storage-sqlx4k/src/commonMain/resources/migrations` is one that stops being
+    # required the day that directory moves.
+    name: ${{ matrix.storage }}
+    runs-on: ubuntu-latest
+
+    # BOTH DISTRIBUTIONS, because they are two links and not one. They carry different sqlx4k
+    # drivers — Rust static archives, which is exactly the kind of dependency a static link can
+    # refuse — and an image built for one says nothing about the other.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: distribution
+            binary: shildik.kexe
+            migrations: storage-sqlx4k/src/commonMain/resources/migrations
+            storage: postgres
+          - module: distribution-sqlite
+            binary: shildik-sqlite.kexe
+            migrations: storage-sqlx4k-sqlite/src/commonMain/resources/migrations
+            storage: sqlite
+
+    # Up for both legs. The SQLite one does not use it, and starting a database it ignores costs a
+    # few seconds — against a conditional `services:` block, which GitHub does not have.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: shildik
+          POSTGRES_USER: shildik
+          POSTGRES_PASSWORD: secret
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U shildik"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the image
+        run: |
+          docker build \
+            --file docker/native.Dockerfile \
+            --build-arg MODULE="$MODULE" \
+            --build-arg BINARY="$BINARY" \
+            --build-arg MIGRATIONS="$MIGRATIONS" \
+            --tag shildik:ci .
+        env:
+          MODULE: ${{ matrix.module }}
+          BINARY: ${{ matrix.binary }}
+          MIGRATIONS: ${{ matrix.migrations }}
+
+      # `--network host` so the container reaches the service container the way the runner does.
+      # The SQLite file goes in `/app`, the image's `WORKDIR`, because nothing here needs it to
+      # outlive the container.
+      - name: Start it
+        env:
+          STORAGE: ${{ matrix.storage }}
+        run: |
+          common=(--detach --name shildik-ci --network host
+                  -e SHILDIK_ISSUER=http://localhost:8080
+                  -e SHILDIK_MASTER_KEYS=change-me
+                  -e SHILDIK_BOOTSTRAP_TOKEN=bootstrap)
+          case "$STORAGE" in
+            postgres)
+              docker run "${common[@]}" \
+                -e SHILDIK_JDBC_URL=jdbc:postgresql://localhost:5432/shildik \
+                -e SHILDIK_DB_USER=shildik -e SHILDIK_DB_PASSWORD=secret shildik:ci ;;
+            sqlite)
+              docker run "${common[@]}" -e SHILDIK_DB_PATH=/app/shildik.db shildik:ci ;;
+          esac
+
+      - name: A person signs in, and the page renders
+        run: ./dev/image-smoke.sh http://localhost:8080 http://localhost:9000
+
+      # The shutdown is the half of the lifecycle nobody watches, and on Kotlin/Native it is the
+      # half that runs its steps in the opposite order from the JVM. The transcript is what says the
+      # sequence ran at all: a process simply killed at the end of the grace period looks identical
+      # from the outside.
+      - name: It stops in order, and says so
+        run: |
+          docker stop --timeout 40 shildik-ci
+          log=$(docker logs shildik-ci 2>&1)
+          for stage in SIGNAL ANNOUNCE DRAIN RELEASE_CONSUMERS RELEASE_POOLS EXIT; do
+            if ! printf '%s\n' "$log" | grep -q "$stage COMPLETED"; then
+              echo "the shutdown transcript has no completed $stage stage" >&2
+              printf '%s\n' "$log" | tail -40 >&2
+              exit 1
+            fi
+          done
+
+      # The container has no shell, so this is the only account of what went wrong.
+      - name: What it said, if it did not
+        if: failure()
+        run: docker logs shildik-ci || true
+
+      # WHAT THIS NUMBER IS DEPENDS ON THE HOST, and the field does not say so: with the overlay2
+      # storage driver a runner has, `.Size` is the UNPACKED size on disk; with the containerd
+      # snapshotter it is the compressed content, which is what a `pull` transfers. The two are not
+      # comparable. This one is a trend line for this job — it moves when the image does.
+      - name: Size
+        if: always()
+        run: docker image inspect shildik:ci --format 'unpacked on this runner {{.Size}} bytes (not pull bytes)'

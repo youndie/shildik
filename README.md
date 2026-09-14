@@ -185,12 +185,14 @@ curl -X POST localhost:8080/realms/main/protocol/openid-connect/token \
   -d grant_type=client_credentials -d client_id=orders-api -d client_secret=<secret>
 ```
 
-The image is `ghcr.io/youndie/shildik` — 44 MB, `linux/amd64`, the reference distribution with
-every sign-in method compiled in. Its tags name releases: a version like `0.2.0.13`, the commit it
-was built from as `sha-a62db6d`, and `latest` for the newest release.
+The image is `ghcr.io/youndie/shildik` — 11 MB to pull, `linux/amd64`, the reference distribution
+with every sign-in method compiled in. **There is nothing under it**: the binary is compiled inside
+the Dockerfile, linked statically, and the runtime stage is `FROM scratch` with four glibc files and
+a CA bundle beside it. Its tags name releases: a version like `0.2.0.13`, the commit it was built
+from as `sha-a62db6d`, and `latest` for the newest release.
 
 **There is a second image, and it needs no database at all.** `ghcr.io/youndie/shildik-sqlite`
-(46 MB) is the same distribution built on `storage-sqlx4k-sqlite`: one file on a volume instead of
+(12 MB) is the same distribution built on `storage-sqlx4k-sqlite`: one file on a volume instead of
 a PostgreSQL to operate, tagged by the same rules. What it costs is a second replica — one SQLite
 file cannot be shared by two pods — so it is for an installation that runs a single instance and
 takes a moment of downtime on deploy.
@@ -247,7 +249,8 @@ dependencies {
 
 ```bash
 ./gradlew check                  # build, ktlint, tests on the JVM and on a native target
-./gradlew :distribution:image    # the reference container, built locally
+./gradlew :distribution:image    # the reference container — compiled inside the image
+./dev/image-smoke.sh             # and the check that it can actually sign somebody in
 helm lint charts/shildik --set issuer=https://id.example.com \
   --set database.jdbcUrl=jdbc:postgresql://pg:5432/shildik --set ingress.host=id.example.com
 ```

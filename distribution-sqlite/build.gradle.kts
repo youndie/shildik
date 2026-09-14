@@ -23,6 +23,11 @@ kotlin {
 // buys it is one `main()` and a dependency list; the two files differ by the line naming the
 // storage, which is exactly the difference the images have.
 kotlin {
+    // Off unless asked; `docker/native.Dockerfile` asks. The reasons, and what the overrides below
+    // do, are written out once in `distribution/build.gradle.kts` — the two blocks are the same
+    // block and must stay identical, because the two images are the same image.
+    val staticLink = providers.gradleProperty("shildik.staticLink").orNull.toBoolean()
+
     linuxX64 {
         binaries.executable {
             entryPoint = "io.github.youndie.shildik.distribution.sqlite.main"
@@ -44,6 +49,21 @@ kotlin {
             // request path its peak came out HIGHER, the opposite of its behaviour on a service
             // without one. The mechanism transfers between services; the constant does not.
             binaryOption("fixedBlockPageSize", "16")
+
+            // A static link, and with it no base image at all (#48). Why each of the five
+            // overrides is here, what the build stage has to install for them to work, and why
+            // `scratch` still needs the shared glibc on disk: `distribution/build.gradle.kts`.
+            if (staticLink) {
+                linkerOpts("-static", "--no-dynamic-linker", "-L/usr/lib/x86_64-linux-gnu")
+                freeCompilerArgs +=
+                    "-Xoverride-konan-properties=" +
+                    "targetSysRoot.linux_x64=/;" +
+                    "crtFilesLocation.linux_x64=usr/lib/x86_64-linux-gnu;" +
+                    "libGcc.linux_x64=usr/lib/gcc/x86_64-linux-gnu/13;" +
+                    "linkerGccFlags=-lgcc -lgcc_eh -lc;" +
+                    "linkerKonanFlags.linux_x64=-Bstatic -lstdc++ -ldl -lm -lpthread " +
+                    "--defsym __cxa_demangle=Konan_cxa_demangle --gc-sections"
+            }
         }
     }
 
@@ -61,33 +81,28 @@ kotlin {
     }
 }
 
-// The build context, assembled the same way as the Postgres one — and with the **SQLite** schema.
+// Built the same way as the Postgres one — and with the **SQLite** schema.
 //
 // The two migration sets are not interchangeable: one is written in Postgres types and one in
-// SQLite's. Taking them from the storage module this binary actually depends on is what keeps the
-// pair honest; a path spelled out by hand would be a third place to keep in step.
-val imageContext =
-    tasks.register<Sync>("imageContext") {
-        dependsOn("linkReleaseExecutableLinuxX64")
-        from(rootProject.file("docker/native.Dockerfile")) { rename { "Dockerfile" } }
-        from(layout.buildDirectory.file("bin/linuxX64/releaseExecutable/shildik-sqlite.kexe"))
-        from(project(":storage-sqlx4k-sqlite").file("src/commonMain/resources/migrations")) { into("migrations") }
-        into(layout.buildDirectory.dir("image"))
-    }
-
-// Builds the container. Requires docker; there is no emulation and no fallback, because a
-// "successful" build that produced no image is worse than an error.
+// SQLite's, and the argument below names the storage module this binary actually depends on. The
+// Dockerfile's default is the other one, which is why every argument is passed and none is left to
+// it.
 val image =
     tasks.register<Exec>("image") {
-        dependsOn(imageContext)
-        workingDir(layout.buildDirectory.dir("image"))
+        workingDir(rootProject.projectDir)
         commandLine(
             "docker",
             "build",
             "--platform",
             "linux/amd64",
+            "--file",
+            "docker/native.Dockerfile",
+            "--build-arg",
+            "MODULE=distribution-sqlite",
             "--build-arg",
             "BINARY=shildik-sqlite.kexe",
+            "--build-arg",
+            "MIGRATIONS=storage-sqlx4k-sqlite/src/commonMain/resources/migrations",
             "-t",
             "shildik-sqlite:${project.version}",
             ".",
