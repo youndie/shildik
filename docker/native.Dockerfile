@@ -110,6 +110,22 @@ ARG MIGRATIONS=storage-sqlx4k/src/commonMain/resources/migrations
 COPY --from=build /src/${MIGRATIONS} /app/migrations
 ENV SHILDIK_MIGRATIONS=/app/migrations
 
+# THE ALLOCATOR, CAPPED. glibc gives a thread an arena of its own whenever the one it wants is
+# locked, up to eight per core — and it counts the *host's* cores, not the container's CPU quota. An
+# arena hands pages back only from its top, so the resident set is the sum of every arena's
+# high-water mark rather than the live heap, and a container limit is reached with a small heap.
+#
+# MEASURED IN TRACY, NOT HERE: the same stack and the same `scratch` image, an A/B with each
+# container's own environment read back — a third less anonymous memory for identical work
+# (tracy M-137). shildik already sets the two-connection SQLite pool that milestone's other half
+# argues for (see SQLITE_POOL), so what is left is this. The saving on *this* service is not
+# measured yet and the number above is not its number.
+#
+# The price is contention on the malloc lock. Signing somebody in spends its time in PBKDF2 rather
+# than in the allocator, so it is not expected to matter here — and "not expected" is the reason a
+# measurement on this service's own stand belongs after this, not instead of it.
+ENV MALLOC_ARENA_MAX=2
+
 # 8080 is the public contour, 9000 the management one. Publish the second at your peril: the
 # admin API lives there, and it is the whole access model.
 EXPOSE 8080 9000

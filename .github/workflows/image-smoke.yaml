@@ -105,6 +105,12 @@ jobs:
       # `--network host` so the container reaches the service container the way the runner does.
       # The SQLite file goes in `/app`, the image's `WORKDIR`, because nothing here needs it to
       # outlive the container.
+      # A measured setting that nothing asserts is a setting that will be deleted.
+      - name: The allocator cap survived the build
+        run: |
+          docker image inspect shildik:ci --format '{{json .Config.Env}}' | grep -q 'MALLOC_ARENA_MAX=2' \
+            || { echo "the image lost MALLOC_ARENA_MAX=2" >&2; exit 1; }
+
       - name: Start it
         env:
           STORAGE: ${{ matrix.storage }}
