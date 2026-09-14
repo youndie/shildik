@@ -1,0 +1,20 @@
+# WHAT THE IMAGE BUILD MUST NOT CARRY. `docker/native.Dockerfile` compiles the binary itself, so it
+# does `COPY . .` and everything not listed here is sent to the daemon on every build. A checkout
+# that has been built once holds hundreds of megabytes of `build/` directories against ~30 MB of
+# everything else, and CI never notices — a fresh checkout has none of them, which is exactly why
+# this file is easy to forget and only bites on a developer's machine.
+#
+# NOTHING GIT TRACKS MAY BE LISTED HERE, and that is not tidiness. As far as git is concerned the
+# build context is a working tree: the `io.github.youndie.kore.build` plugin runs git in it to
+# decide the `dirty` flag it compiles into `/version`, and a tracked file excluded here reads as a
+# deleted one — so the stamp says `-dirty` forever, from a clean checkout. A flag that is always on
+# is a flag that says nothing. Everything below is in `.gitignore` already, and the list should stay
+# that way.
+#
+# `.git` IS DELIBERATELY ABSENT from this list: without it the commit in `/version` is `unknown`.
+**/build/
+.gradle/
+.kotlin/
+.idea/
+local.properties
+.DS_Store
