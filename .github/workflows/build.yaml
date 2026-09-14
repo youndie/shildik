@@ -27,7 +27,13 @@ jobs:
       # Linux targets rather than the macOS one: the runner is Linux, and cross-compiling to Apple
       # targets is not possible here. What this proves is that the common code works away from the
       # JVM — which is the whole point of these modules.
-      - run: ./gradlew check -x macosArm64Test
+      # `build`, not `check`. `check` skips `assemble`, so the Apple source sets were never
+      # compiled here at all — they cross-compile on Linux since
+      # `kotlin.native.enableKlibsCrossCompilation`, and nothing scheduled them. `:cli`'s macOS
+      # actual had been missing a visibility modifier since explicit API went back on in #45, and
+      # main stayed green through it: a `./gradlew build` on a developer machine is what found it.
+      # The Apple *tests* still need a Mac and stay excluded.
+      - run: ./gradlew build -x macosArm64Test
 
   # The chart is not built by Gradle, so nothing else would ever look at it. A template that stops
   # rendering is found by whoever installs it otherwise — which is the worst possible reviewer.

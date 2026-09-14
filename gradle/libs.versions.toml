@@ -2,6 +2,11 @@
 # The shared build conventions. One number: every sborka plugin below takes its version from here.
 sborka = "0.4.0.58"
 kotlin = "2.4.10"
+# kore: the process lifecycle of a server binary — the ordered shutdown, the readiness latch and
+# /version. One number for the libraries and the Gradle plugin that generates the build identity:
+# they are published together, and a plugin from one version with a library from another would
+# compile and then disagree about the object it generates.
+kore = "0.1.4"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 cryptography = "0.6.0"
@@ -13,6 +18,9 @@ clikt = "5.1.0"
 ktlint-plugin = "14.2.0"
 
 [libraries]
+kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
+kore-ktor = { module = "io.github.youndie:kore-ktor", version.ref = "kore" }
+
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -36,6 +44,7 @@ cryptography-provider-openssl3 = { module = "dev.whyoleg.cryptography:cryptograp
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 [plugins]
+koreBuild = { id = "io.github.youndie.kore.build", version.ref = "kore" }
 sborkaKmp = { id = "io.github.youndie.sborka.kmp", version.ref = "sborka" }
 sborkaParity = { id = "io.github.youndie.sborka.parity", version.ref = "sborka" }
 sborkaJvm = { id = "io.github.youndie.sborka.jvm", version.ref = "sborka" }

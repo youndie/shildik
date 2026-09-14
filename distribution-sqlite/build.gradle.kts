@@ -2,6 +2,11 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("io.github.youndie.sborka.kmp")
     id("io.github.youndie.sborka.lint")
+    // Generates `KoreBuildIdentity` — version, commit and build time as compiled-in source, because
+    // Kotlin/Native has neither resources nor a manifest for `/version` to read them from. It lives
+    // here rather than in `:server` because the generated object belongs to the module that becomes
+    // a binary; `main()` hands it to `runShildik`.
+    alias(libs.plugins.koreBuild)
 }
 
 // AN APPLICATION, not a library — like `:distribution`, and not published for the same reason:
@@ -22,6 +27,23 @@ kotlin {
         binaries.executable {
             entryPoint = "io.github.youndie.shildik.distribution.sqlite.main"
             baseName = "shildik-sqlite"
+
+            // 16 KiB PAGES INSTEAD OF THE DEFAULT 256. Kotlin/Native's allocator keeps a page per
+            // block-size class PER THREAD — a thread holds it for as long as it lives, occupied or
+            // not — so the resident set follows the thread count rather than the live heap, and
+            // `Dispatchers.IO` grows threads under concurrency. No GC setting bounds it: these are
+            // pages, not objects.
+            //
+            // Measured on katcher, the same stack, `--memory=192m --cpus=1` under fifty concurrent
+            // requests: the default build was killed with `exit=137` in eight runs out of eight,
+            // peaking at 252-329 MB where a limit allowed it; with this option, 22-26 MB at rest and
+            // 47-62 MB under the same load. `charts/shildik` limits the container to 128Mi on the
+            // internal contour, which is below the number that killed it.
+            //
+            // `-Xallocator=std` was the other candidate and is not taken: with a store on the
+            // request path its peak came out HIGHER, the opposite of its behaviour on a service
+            // without one. The mechanism transfers between services; the constant does not.
+            binaryOption("fixedBlockPageSize", "16")
         }
     }
 

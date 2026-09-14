@@ -8,14 +8,24 @@
 # ours did, and the one that had lost a library did not fail at build time — it failed when the
 # pod started.
 
-# A stage for two libraries: distroless carries neither `libcrypt.so.1` (Kotlin/Native links it
-# unconditionally) nor `libz.so.1`. The list came from `ldd` against a real binary; when a new
-# dependency appears, run `ldd` again rather than guess.
+# A stage for ONE library: distroless carries no `libz.so.1`, and the binary genuinely needs it.
+#
+# `libcrypt.so.1` used to be copied here too, and no longer is. Kotlin/Native declares it for every
+# Linux program — it arrives with `platform.posix`, whose klib manifest names it — while importing
+# not one symbol from it; since `sborka.kmp` links with `-Wl,--as-needed` the declaration is gone.
+# Checked rather than assumed, on the real binary:
+#
+#     readelf -d shildik-sqlite.kexe | grep NEEDED
+#       libm.so.6  libpthread.so.0  librt.so.1  libz.so.1  libdl.so.2  libgcc_s.so.1  libc.so.6
+#
+# Every one of those but `libz` is in distroless/cc. THE COPY IS ALSO WHAT COUPLES THE TWO IMAGES:
+# a copied glibc-versioned file makes the donor's glibc have to be no newer than the runtime's, and
+# a mismatch builds fine and dies at exec with `GLIBC_2.38 not found`. One file is one coupling
+# instead of two; when a new dependency appears, run `readelf -d` again rather than guess.
 FROM --platform=linux/amd64 debian:bookworm-slim AS libs
 
 FROM --platform=linux/amd64 gcr.io/distroless/cc-debian12
 
-COPY --from=libs /lib/x86_64-linux-gnu/libcrypt.so.1 /lib/x86_64-linux-gnu/
 COPY --from=libs /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/
 
 # The binary's name is the only thing distributions differ by. Inside the image it is always

@@ -1,5 +1,9 @@
 package io.github.youndie.shildik.server
 
+import io.github.youndie.kore.health.ReadinessGate
+import io.github.youndie.kore.ktor.installKoreVersion
+import io.github.youndie.kore.ktor.installShutdownRefusal
+import io.github.youndie.kore.version.BuildIdentity
 import io.github.youndie.shildik.core.config.ShildikConfig
 import io.github.youndie.shildik.core.di.coreModule
 import io.github.youndie.shildik.core.di.domainModule
@@ -32,8 +36,15 @@ import org.koin.dsl.module
  */
 public class ShildikServer(
     private val application: KoinApplication,
-    private val public: EmbeddedServer<*, *>,
-    private val management: EmbeddedServer<*, *>,
+    public val public: EmbeddedServer<*, *>,
+    public val management: EmbeddedServer<*, *>,
+    /**
+     * The latch `/ready` reads, and the one the announce stage of an ordered shutdown flips.
+     *
+     * Exposed rather than hidden because the caller owns the order: `:server-boot` hands it to
+     * kore's announce stage, and a consumer assembling its own shutdown needs the same handle.
+     */
+    public val readiness: ReadinessGate = ReadinessGate(),
 ) {
     public val koin: Koin get() = application.koin
 
@@ -42,10 +53,23 @@ public class ShildikServer(
         public.start(wait = wait)
     }
 
+    /**
+     * Stops both engines and closes the container.
+     *
+     * **Unordered, and kept for callers that have nothing better** — tests, a local run, a consumer
+     * that is not in Kubernetes. `:server-boot` does not use it: a process that is asked to stop
+     * has to announce first, then drain, then close the pool, and this method does all of it at
+     * once because it cannot know how long it is allowed to take.
+     */
     public fun stop() {
         public.stop()
         management.stop()
         // We close **our own** container, not the global one: other servers did not ask for it.
+        application.close()
+    }
+
+    /** Closes the container. The pool goes with it, so this belongs *after* the engines have drained. */
+    public fun closeContainer() {
         application.close()
     }
 }
@@ -66,6 +90,15 @@ public fun shildikServer(
     storage: Module,
     observability: Application.() -> Unit = {},
     reporter: ErrorReporter = ErrorReporter.Logging,
+    /**
+     * What `/version` reports, or `null` for no such route.
+     *
+     * Passed in rather than read here because the object is **generated per module** by the
+     * `io.github.youndie.kore.build` plugin, and the module that has it is the distribution — the
+     * one that becomes a binary. A `:server` that imported a generated symbol would be a library
+     * that cannot be compiled without the plugin applied to itself.
+     */
+    identity: BuildIdentity? = null,
 ): ShildikServer {
     // An **isolated** container, not the global `startKoin`. The global one made two servers in
     // one JVM impossible: the second failed with `KoinApplicationAlreadyStarted`, and `stopKoin` on
@@ -89,14 +122,20 @@ public fun shildikServer(
         }
     }
 
+    val readiness = ReadinessGate()
+
     return ShildikServer(
         application = application,
         public =
             embeddedServer(CIO, port = config.publicPort) {
-                publicModule(koin)
+                publicModule(koin, readiness, identity)
                 observability()
             },
-        management = embeddedServer(CIO, port = config.managementPort) { managementModule(koin) },
+        management =
+            embeddedServer(CIO, port = config.managementPort) {
+                managementModule(koin, readiness, identity)
+            },
+        readiness = readiness,
     )
 }
 
@@ -119,9 +158,20 @@ private fun Application.commonPlugins() {
 }
 
 /** The public contour: token, certs, discovery and health. No management handles here. */
-public fun Application.publicModule(koin: Koin) {
+public fun Application.publicModule(
+    koin: Koin,
+    readiness: ReadinessGate = ReadinessGate(),
+    identity: BuildIdentity? = null,
+) {
+    // BEFORE the routes. An interceptor installed later would let through every call that arrived
+    // first, and the one request this must not miss is the first sign-in after readiness went
+    // false. kore's own paths stay served — a 503 from a liveness probe restarts the pod in the
+    // middle of the shutdown it is reporting — and so does `/ready`, which is *supposed* to fail
+    // and says so in its own words.
+    installShutdownRefusal(isShuttingDown = { readiness.isShuttingDown })
     commonPlugins()
-    healthRoutes(koin.get())
+    healthRoutes(koin.get(), readiness)
+    identity?.let { installKoreVersion(it) }
     oidcRoutes(koin)
 }
 
@@ -130,8 +180,16 @@ public fun Application.publicModule(koin: Koin) {
  * in its final place instead of moving there later — a move would have meant that for some time the
  * management handles lived on the public port.
  */
-public fun Application.managementModule(koin: Koin) {
+public fun Application.managementModule(
+    koin: Koin,
+    readiness: ReadinessGate = ReadinessGate(),
+    identity: BuildIdentity? = null,
+) {
+    // No shutdown refusal here on purpose: the management contour is where the probes live, and it
+    // has to keep answering for as long as the process does. It is also where an operator looks
+    // while a shutdown is happening.
     commonPlugins()
-    healthRoutes(koin.get())
+    healthRoutes(koin.get(), readiness)
+    identity?.let { installKoreVersion(it) }
     adminRoutes(koin)
 }

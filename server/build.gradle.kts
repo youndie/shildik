@@ -32,6 +32,15 @@ kotlin {
             implementation(ktorLibs.server.testHost)
         }
         commonMain.dependencies {
+            // `api`, not `implementation`: `ShildikServer.readiness` is a kore type on this module's
+            // public surface, and `:server-boot` hands the same gate to kore's announce stage. A
+            // consumer that cannot see the type cannot assemble its own shutdown.
+            //
+            // Both kore modules resolve from the portfolio's repository rather than Central — as do
+            // shildik's own artefacts, so this adds no constraint a consumer did not already have.
+            api(libs.kore.core)
+            api(libs.kore.ktor)
+
             api(project(":core"))
             api(project(":shared"))
             api(project(":shared-oidc"))
