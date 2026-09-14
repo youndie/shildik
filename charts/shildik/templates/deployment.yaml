@@ -14,6 +14,12 @@ spec:
       annotations: {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      # THE NUMBER THE SHUTDOWN PLAN IS CHECKED AGAINST. `DEADLINES` in `:server-boot` adds up to
+      # 24 seconds — five announcing, ten draining, three per release group — and declares 30 as the
+      # budget it fits into. Nothing tells a process its real grace period on any platform, so the two
+      # are one number written in two places: lower this and the process is killed mid-drain, with
+      # kore's own fit check saying nothing, because it was told 30.
+      terminationGracePeriodSeconds: 30
       containers:
         - name: shildik
           image: {{ include "shildik.image" . | quote }}
@@ -59,6 +65,18 @@ spec:
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          # A STARTUP PROBE POINTED AT THE ENDPOINT THAT ALREADY EXISTS. `/ready` answers 503 until
+          # the storage answers, which is exactly what a pod applying migrations looks like — and
+          # until this, a start slower than the liveness threshold was restarted for being slow.
+          # A minute in one-second steps rather than a long `initialDelaySeconds`: the pod enters
+          # service the moment it is ready instead of at a fixed time chosen for the worst case.
+          # Kubernetes suppresses the other two probes until this one passes once.
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: management
+            periodSeconds: 1
+            failureThreshold: 60
           # Two probes answering two questions. Liveness deliberately does not touch the database:
           # hang it on there and one unreachable database restarts every pod at once, turning an
           # outage into a restart loop. Readiness does touch it — without a database the provider
@@ -67,7 +85,6 @@ spec:
             httpGet:
               path: /health
               port: management
-            initialDelaySeconds: 2
             periodSeconds: 10
           readinessProbe:
             httpGet:

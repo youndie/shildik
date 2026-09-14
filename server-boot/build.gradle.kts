@@ -23,6 +23,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            // `:server` already exposes the two kore modules as `api` — `ShildikServer.readiness` is
+            // a kore type — so they arrive with it rather than being named twice.
             api(project(":server"))
             api(libs.koin.core)
             implementation(ktorLibs.server.core)

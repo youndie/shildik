@@ -1,5 +1,6 @@
 package io.github.youndie.shildik.distribution
 
+import io.github.youndie.kore.generated.KoreBuildIdentity
 import io.github.youndie.shildik.auth.google.GoogleAuthMethod
 import io.github.youndie.shildik.auth.magic.MagicLinkAuthMethod
 import io.github.youndie.shildik.auth.password.PasswordAuthMethod
@@ -25,6 +26,10 @@ import io.github.youndie.shildik.storage.sqlx4k.sqlx4kStorageModule
  */
 fun main() =
     runShildik(
+        // What `/version` reports: the version, the commit and the build time, generated into this
+        // module by the `io.github.youndie.kore.build` plugin and compiled in, because Kotlin/Native
+        // has neither resources nor a manifest to read them from.
+        identity = KoreBuildIdentity,
         storage = { config ->
             sqlx4kStorageModule(
                 config.jdbcUrl,

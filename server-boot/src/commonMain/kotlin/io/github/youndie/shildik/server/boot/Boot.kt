@@ -1,14 +1,22 @@
 package io.github.youndie.shildik.server.boot
 
+import io.github.youndie.kore.ktor.EngineDrain
+import io.github.youndie.kore.lifecycle.AnnounceNotReady
+import io.github.youndie.kore.lifecycle.ShutdownDeadlines
+import io.github.youndie.kore.lifecycle.ShutdownParticipant
+import io.github.youndie.kore.lifecycle.runUntilSignal
+import io.github.youndie.kore.version.BuildIdentity
 import io.github.youndie.shildik.core.config.ShildikConfig
 import io.github.youndie.shildik.core.feature.auth.AuthMethod
 import io.github.youndie.shildik.core.feature.auth.AuthMethodRegistry
 import io.github.youndie.shildik.server.ErrorReporter
 import io.github.youndie.shildik.server.shildikServer
 import io.ktor.server.application.Application
+import kotlinx.coroutines.runBlocking
 import org.koin.core.module.Module
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Starting a distribution.
@@ -37,22 +45,98 @@ public fun runShildik(
     storage: (ShildikConfig) -> Module,
     observability: Application.() -> Unit = {},
     reporter: ErrorReporter = ErrorReporter.Logging,
+    identity: BuildIdentity? = null,
+    deadlines: ShutdownDeadlines = DEADLINES,
     authMethods: Scope.() -> List<AuthMethod>,
 ) {
     val config = loadConfig()
-    shildikServer(
-        config = config,
-        storage =
-            module {
-                includes(storage(config))
-                // Sign-in methods are wired by a line in the distribution's build, not by
-                // reflection and not by a jar in a directory.
-                single { AuthMethodRegistry(authMethods()) }
-            },
-        observability = observability,
-        reporter = reporter,
-    ).start(wait = true)
+    val server =
+        shildikServer(
+            config = config,
+            storage =
+                module {
+                    includes(storage(config))
+                    // Sign-in methods are wired by a line in the distribution's build, not by
+                    // reflection and not by a jar in a directory.
+                    single { AuthMethodRegistry(authMethods()) }
+                },
+            observability = observability,
+            reporter = reporter,
+            identity = identity,
+        )
+
+    // NOT `wait = true`. The main thread has to reach the await below; with `wait = true` the
+    // signal arrives at a process that has no sequence to run, Ktor stops the public engine from
+    // its own hook, and the management engine and the Koin container — which owns the database
+    // pool — are never closed at all. From outside that is indistinguishable from a clean stop.
+    server.start(wait = false)
+
+    runBlocking {
+        runUntilSignal(
+            deadlines,
+            // Inside the callback, not after the call: on the JVM this function returning means the
+            // shutdown hook has returned and the runtime is already on its way out. Native carries
+            // on, which is what makes the racing version easy to write and never notice.
+            onFinished = { run -> println(run.transcript) },
+        ) {
+            // Readiness first, and this is the step shildik could not take before: `/ready` goes
+            // false while the process can still finish what it holds, so the load balancer moves on
+            // to the other replica instead of meeting a closed socket mid-sign-in.
+            announce(AnnounceNotReady(server.readiness))
+
+            // The public contour drains: in-flight token exchanges finish, new arrivals get 503.
+            drain(EngineDrain(server.public, deadlines.drain, deadlines.drain + 5.seconds))
+
+            // Management stops **after** the public contour and **before** the container, so no
+            // probe can reach a repository whose pool has just been closed. It costs the kubelet a
+            // few seconds of connection-refused at the very end, against a `/ready` that would
+            // answer by throwing.
+            consumer(EngineDrain(server.management, deadlines.drain, deadlines.drain + 5.seconds))
+
+            // Last: the container owns the storage pool, and everything above it writes through it.
+            // This is the close that `ApplicationStopping` would have run before the drain on
+            // Kotlin/Native and after it on the JVM, from identical source.
+            pool(participant("koin container") { server.closeContainer() })
+        }
+    }
 }
+
+/**
+ * How the process stops, as numbers.
+ *
+ * 5 + 10 + 3×3 = 24 seconds inside a declared 30, which has to be the chart's
+ * `terminationGracePeriodSeconds`: nothing tells a process its real budget on any platform, so kore
+ * is *told* one and the chart has to keep saying the same number.
+ *
+ * **The pre-drain wait is kore's default five seconds and stays there**, unlike the single-replica
+ * services in this portfolio. `charts/shildik` runs two replicas, so those five seconds are the
+ * window in which traffic actually moves to the other pod rather than five seconds of downtime.
+ */
+private val DEADLINES =
+    ShutdownDeadlines(
+        preDrainWait = 5.seconds,
+        drain = 10.seconds,
+        releaseGroup = 3.seconds,
+        gracePeriod = 30.seconds,
+    )
+
+/**
+ * A participant out of a name and a lambda.
+ *
+ * `label` and `block` rather than `name` and `stop`: inside the object those two names belong to the
+ * members being overridden, and `stop()` calling `stop` would be the function calling itself.
+ */
+private fun participant(
+    label: String,
+    block: suspend () -> Unit,
+): ShutdownParticipant =
+    object : ShutdownParticipant {
+        override val name: String = label
+
+        override suspend fun stop() {
+            block()
+        }
+    }
 
 /** The build version, for whatever a distribution attaches as observability. */
 public val release: String get() = optional("SHILDIK_RELEASE") ?: "dev"
