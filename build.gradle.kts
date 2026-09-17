@@ -3,9 +3,9 @@ plugins {
     // `kotlinJvm` runs into "plugin is already on the classpath with an unknown version": the
     // multiplatform plugin has already put Kotlin on the build classpath. The sborka plugins are
     // declared the same way and for the same reason.
-    alias(libs.plugins.kotlinMultiplatform) apply false
-    alias(libs.plugins.kotlinJvm) apply false
-    alias(libs.plugins.kotlinSerialization) apply false
+    alias(wip.plugins.kotlinMultiplatform) apply false
+    alias(wip.plugins.kotlinJvm) apply false
+    alias(wip.plugins.kotlinSerialization) apply false
     alias(libs.plugins.sborkaKmp) apply false
     alias(libs.plugins.sborkaJvm) apply false
     alias(libs.plugins.sborkaLint) apply false
