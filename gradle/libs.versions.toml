@@ -1,7 +1,9 @@
 [versions]
 # The shared build conventions. One number: every sborka plugin below takes its version from here.
-sborka = "0.4.0.58"
-kotlin = "2.4.10"
+# The shared build conventions, and the compiler with them: the `wip` catalog this release
+# publishes carries `kotlin`, so there is no Kotlin version in this file to drift from the rest
+# of the portfolio.
+sborka = "0.4.0.87"
 # kore: the process lifecycle of a server binary — the ordered shutdown, the readiness latch and
 # /version. One number for the libraries and the Gradle plugin that generates the build identity:
 # they are published together, and a plugin from one version with a library from another would
@@ -41,7 +43,6 @@ cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random",
 cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
 cryptography-provider-openssl3 = { module = "dev.whyoleg.cryptography:cryptography-provider-openssl3-prebuilt", version.ref = "cryptography" }
 
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 [plugins]
 koreBuild = { id = "io.github.youndie.kore.build", version.ref = "kore" }
@@ -50,7 +51,4 @@ sborkaParity = { id = "io.github.youndie.sborka.parity", version.ref = "sborka" 
 sborkaJvm = { id = "io.github.youndie.sborka.jvm", version.ref = "sborka" }
 sborkaLint = { id = "io.github.youndie.sborka.lint", version.ref = "sborka" }
 sborkaPublish = { id = "io.github.youndie.sborka.publish", version.ref = "sborka" }
-kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }

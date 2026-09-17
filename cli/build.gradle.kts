@@ -36,12 +36,15 @@ kotlin {
                 // moved to a Linux runner.
                 //
                 // The version constant is a gate that says "revisit on a Kotlin upgrade", and it
-                // fired: the bump to 2.4.10 made the switch stop applying, the cache came back and
-                // linking the CLI failed on the duplicate again. Updating the constant together with
+                // fires by not compiling: the constant for the previous version is REMOVED from
+                // `kotlin-gradle-plugin-api` when the next one lands, so a bump cannot carry the old
+                // one through silently. It fired on 2.4.10 — the switch stopped applying, the cache
+                // came back and linking the CLI failed on the duplicate again — and it fired here on
+                // 2.4.20, where `2_4_10` no longer resolves. Updating the constant together with
                 // Kotlin is a mandatory part of the bump for as long as the duplicate lives in
                 // clikt itself.
                 disableNativeCache(
-                    org.jetbrains.kotlin.gradle.plugin.mpp.DisableCacheInKotlinVersion.`2_4_10`,
+                    org.jetbrains.kotlin.gradle.plugin.mpp.DisableCacheInKotlinVersion.`2_4_20`,
                     "clikt and clikt-mordant produce a duplicate selfAndAncestors symbol at link time",
                 )
             }
