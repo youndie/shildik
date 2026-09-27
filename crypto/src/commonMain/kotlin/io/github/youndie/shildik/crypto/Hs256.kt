@@ -7,18 +7,45 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Verifying a **foreign** token against a shared secret.
+ * A compact JWS signed with HMAC-SHA256 over a secret both sides know.
  *
  * The single exception to [Jws]'s rule that no foreign formats are accepted here. A trusted
- * neighbour hands over a JWT signed with HMAC-SHA256 using a secret both sides know. That is not
- * a signature in the OIDC sense but an assertion by a party we already trust — typically "this
- * email address has been confirmed".
+ * neighbour hands over a JWT signed with a shared secret. That is not a signature in the OIDC
+ * sense but an assertion by a party we already trust — typically "this email address has been
+ * confirmed".
  *
- * Exactly that shape is parsed and nothing more: `HS256`, claims without `iss` or `aud`. Keeping
- * it narrow removes the temptation to accept an arbitrary JWT here.
+ * Exactly that shape and nothing more: `HS256`, claims as they are. Keeping it narrow removes the
+ * temptation to accept an arbitrary JWT here. Checking `exp`, `iss`, `aud` or anything else in the
+ * claims is the caller's job: this object answers only "was it signed with this secret".
+ *
+ * Both halves live here — [sign] for the party that issues such a token and [verify] for the one
+ * that accepts it — so the format has one owner and cannot drift between them.
  */
 public object Hs256 {
     private val hmac = CryptographyProvider.Default.get(HMAC)
+
+    // Built here and never taken from the caller: letting `alg` be a parameter is the road to
+    // `alg: none`, the same reasoning as in [Jws].
+    private const val HEADER = """{"alg":"HS256","typ":"JWT"}"""
+
+    /**
+     * Signs [claims] as a compact JWS: base64url header, base64url claims (compact JSON, keys in
+     * the order given), base64url HMAC-SHA256 signature.
+     */
+    public suspend fun sign(
+        claims: JsonObject,
+        secret: String,
+    ): String {
+        val key = hmac.keyDecoder(SHA256).decodeFromByteArray(HMAC.Key.Format.RAW, secret.encodeToByteArray())
+
+        val signingInput =
+            HEADER.encodeToByteArray().encodeBase64Url() + "." +
+                Json.encodeToString(JsonObject.serializer(), claims).encodeToByteArray().encodeBase64Url()
+
+        val signature = key.signatureGenerator().generateSignature(signingInput.encodeToByteArray())
+
+        return signingInput + "." + signature.encodeBase64Url()
+    }
 
     /**
      * @return the claims when the signature matches, `null` otherwise
