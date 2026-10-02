@@ -26,10 +26,10 @@
 # the old version of this file spent a paragraph warning about (#48). Compile here and both halves
 # come from one apt index — the pairing problem is not solved, it is gone.
 #
-# `gradle:9.7.1-jdk25-noble` rather than the wrapper: the tag already carries the version
+# `gradle:9.8.0-jdk25-noble` rather than the wrapper: the tag already carries the version
 # `gradle/wrapper/gradle-wrapper.properties` names, and `./gradlew` inside the image would download
 # a second copy of it. The two move together — a wrapper bump is a tag bump here.
-FROM --platform=linux/amd64 gradle:9.7.1-jdk25-noble AS build
+FROM --platform=linux/amd64 gradle:9.8.0-jdk25-noble AS build
 
 # g++ for the static archives the link needs — `libc.a`, `crt1.o`, `libstdc++.a`, `libgcc.a`,
 # `libgcc_eh.a` — and `zlib1g-dev` for `libz.a`, which `ktor-client-curl` asks for by name. The
