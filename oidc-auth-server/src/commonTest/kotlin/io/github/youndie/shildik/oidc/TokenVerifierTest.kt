@@ -103,4 +103,22 @@ class TokenVerifierTest {
             assertNull(verifier.verify("not.a.token"))
             assertNull(verifier.verify("a.b.c"))
         }
+
+    /** B-242: a trusted key is not enough — the token must name one of the configured issuers. */
+    @Test
+    fun `a token naming another issuer is rejected`() =
+        runTest {
+            val checked =
+                TokenVerifier(
+                    JwksSource(HttpClient(jwksEngine(provider)), jwksUrl = { provider.certs }),
+                    issuers = { setOf("${provider.url}/realms/${provider.realm}") },
+                )
+
+            assertNotNull(checked.verify(provider.token()))
+            assertNull(
+                checked.verify(provider.token(issuer = "https://elsewhere.test/realms/main")),
+                "another realm's issuer",
+            )
+            assertNull(checked.verify(provider.token(issuer = null)), "no issuer at all")
+        }
 }

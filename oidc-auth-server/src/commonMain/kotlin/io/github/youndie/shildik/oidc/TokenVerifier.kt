@@ -28,10 +28,12 @@ public class VerifiedToken internal constructor(
 /**
  * Verifying somebody else's token: signature, lifetime, nothing beyond that.
  *
- * **`iss` is deliberately not checked.** Checking it would reject the second provider's tokens
- * precisely for being the second provider's — and the whole possibility of a seamless migration
- * rests on a service accepting both. Two key sources live side by side until the old provider is
- * gone; comparing issuers would defeat that.
+ * **`iss` is checked against every configured provider**, not only the primary one: a migration
+ * rests on a service accepting both providers' tokens, so the second provider's issuer is as good
+ * as the first. A token signed by a trusted key but naming another issuer is refused — it was
+ * minted for somebody else's realm. The expected values come from the providers' discovery
+ * (`issuer`), falling back to `{base}/realms/{realm}`. Without [issuers] the check is off; that
+ * is for tests of the signature alone, `configureAuth` always passes them.
  *
  * `aud` is not checked either: Keycloak-shaped providers put `account` there, and no meaningful
  * check comes out of it.
@@ -42,6 +44,7 @@ public class VerifiedToken internal constructor(
 )
 internal class TokenVerifier(
     private val keys: KeySource,
+    private val issuers: (suspend () -> Set<String>)? = null,
     private val skew: Duration = 60.seconds,
     private val now: () -> Instant = { Clock.System.now() },
 ) {
@@ -58,6 +61,10 @@ internal class TokenVerifier(
         if (!key.verify(parsed.signingInput, parsed.signature)) return null
 
         val claims = parsed.claims
+
+        // A trusted key, but somebody else's realm: refused (see the KDoc on the class).
+        issuers?.let { expected -> if (claims.text("iss") !in expected()) return null }
+
         val moment = now()
 
         // **A token without `exp` is rejected**, which is stricter than the usual JVM stack:

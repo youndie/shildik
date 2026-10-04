@@ -105,7 +105,7 @@ public class AuthorizeUseCase(
                 // already have an identifier and a new one must not be issued: a relying service
                 // recognises them by `sub` (feature-user-import §2).
                 val user =
-                    users.findByIdentity(tenant.id, identity)
+                    users.findByIdentity(tenant.id, identity)?.let { confirmedBy(it, subject) }
                         ?: linkedByEmail(tenant.id, method, subject)
                         ?: newUser(tenant, identity, subject)
 
@@ -128,6 +128,24 @@ public class AuthorizeUseCase(
                 IssuedCode(code = code, redirectUri = params.redirectUri, state = params.state)
             }
         }
+
+    /**
+     * A person found by their identity whose address this sign-in has just proven.
+     *
+     * The flag used to be set only when a person was created or linked by email, and never again.
+     * People imported from Keycloak arrived with `emailVerified = false` and keep signing in through
+     * their `google` identity, which finds them directly — so Google confirming the address on every
+     * sign-in changed nothing, and relying services saw them as unverified forever. Raised only when
+     * the proven address is the one on record: a different address proves nothing about this one.
+     */
+    private suspend fun confirmedBy(
+        user: User,
+        subject: AuthenticatedSubject,
+    ): User {
+        if (user.emailVerified || !subject.emailVerified) return user
+        if (subject.email == null || !subject.email.equals(user.email, ignoreCase = true)) return user
+        return user.copy(emailVerified = true).also { users.upsert(it) }
+    }
 
     /**
      * A person found by a verified email rather than by the sign-in method's identity.

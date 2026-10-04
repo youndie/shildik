@@ -66,7 +66,8 @@ public fun Application.configureAuth(
     // a test starts would leave a connection pool behind.
     monitor.subscribe(ApplicationStopped) { client.close() }
 
-    val verifier = TokenVerifier(config.keys(client, log = logger::info))
+    val providers = config.providers(client, log = logger::info)
+    val verifier = TokenVerifier(providers.keys(client), issuers = { providers.map { it.issuer() }.toSet() })
 
     install(Authentication) {
         bearer(JWT_AUTH_OIDC) {
@@ -113,16 +114,24 @@ internal fun certsUrl(
             RealmResource.OpenIdConnect.Certs(RealmResource.OpenIdConnect(RealmResource(realm))),
         )
 
-internal fun OidcConfig.keys(
+/** The providers whose tokens this service accepts: the primary one, and the additional one when set. */
+internal fun OidcConfig.providers(
     client: HttpClient,
     log: (String) -> Unit,
-): KeySource {
-    val primary = JwksSource(client, EndpointAddresses(client, url, realm)::jwksUrl)
-    if (additionalUrl.isBlank()) return primary
+): List<EndpointAddresses> {
+    val primary = EndpointAddresses(client, url, realm)
+    if (additionalUrl.isBlank()) return listOf(primary)
 
     val additional = additionalRealm.ifBlank { realm }
     log("Tokens from two providers will be accepted: $url and $additionalUrl (realm $additional)")
-    return MultiSourceKeys(
-        listOf(primary, JwksSource(client, EndpointAddresses(client, additionalUrl, additional)::jwksUrl)),
-    )
+    return listOf(primary, EndpointAddresses(client, additionalUrl, additional))
 }
+
+internal fun List<EndpointAddresses>.keys(client: HttpClient): KeySource =
+    singleOrNull()?.let { JwksSource(client, it::jwksUrl) }
+        ?: MultiSourceKeys(map { JwksSource(client, it::jwksUrl) })
+
+internal fun OidcConfig.keys(
+    client: HttpClient,
+    log: (String) -> Unit,
+): KeySource = providers(client, log).keys(client)

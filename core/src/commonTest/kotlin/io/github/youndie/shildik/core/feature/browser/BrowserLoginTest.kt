@@ -10,6 +10,7 @@ import io.github.youndie.shildik.core.model.User
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
@@ -224,6 +225,45 @@ class BrowserLoginTest {
             // The milestone's main scenario: otherwise an owner signs in to an empty account.
             assertEquals(keycloakId, exchanged.user.id)
             assertEquals(1, f.users.users.size, "no new user should have been created")
+        }
+
+    /**
+     * B-242: an imported person carries `emailVerified = false` from Keycloak and is found by their
+     * identity on every sign-in; a sign-in that proves the same address raises the flag, one that
+     * does not — or proves another address — leaves it.
+     */
+    @Test
+    fun `a sign-in proving the address raises the flag of an imported person`() =
+        runTest {
+            suspend fun signIn(subject: AuthenticatedSubject): User {
+                val imported =
+                    User(
+                        tenantId = tenantId,
+                        id = "keycloak-user-id",
+                        email = "owner@example.com",
+                        name = "Owner",
+                        emailVerified = false,
+                        enabled = true,
+                        identities = setOf(ExternalIdentity("google", "google-sub-1")),
+                    )
+                val users = FakeUsers(mutableListOf(imported))
+                fixture(
+                    users = users,
+                    method = FakeAuthMethod(subject = subject),
+                ).authorize(authorizeParams()).getOrThrow()
+                return users.users.single()
+            }
+
+            assertTrue(
+                signIn(AuthenticatedSubject("google-sub-1", "Owner@Example.com", emailVerified = true)).emailVerified,
+            )
+            assertFalse(
+                signIn(AuthenticatedSubject("google-sub-1", "owner@example.com", emailVerified = false)).emailVerified,
+            )
+            assertFalse(
+                signIn(AuthenticatedSubject("google-sub-1", "other@example.com", emailVerified = true)).emailVerified,
+                "a proven but different address says nothing about the one on record",
+            )
         }
 
     @Test
