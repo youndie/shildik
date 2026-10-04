@@ -77,4 +77,25 @@ class EndpointAddressesTest {
 
             assertNotNull(verifier.verify(provider.token()), "ключ не нашёлся по адресу из discovery")
         }
+
+    /** B-242: the expected `iss` comes from the same discovery as the keys, with the inherited shape as the fallback. */
+    @Test
+    fun `issuer is taken from discovery and falls back to the realm address`() =
+        runTest {
+            val discovered =
+                Provider("k1", "https://provider.test").apply {
+                    jwksUri =
+                        "https://provider.test/oauth2/jwks"
+                }
+            val silent = Provider("k2", "https://legacy.test")
+
+            assertEquals(
+                "https://provider.test/realms/main",
+                EndpointAddresses(HttpClient(jwksEngine(discovered)), discovered.url, discovered.realm).issuer(),
+            )
+            assertEquals(
+                "https://legacy.test/realms/main",
+                EndpointAddresses(HttpClient(jwksEngine(silent)), silent.url, silent.realm).issuer(),
+            )
+        }
 }

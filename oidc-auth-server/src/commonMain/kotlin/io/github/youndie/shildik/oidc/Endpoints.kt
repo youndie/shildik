@@ -30,6 +30,10 @@ import kotlin.coroutines.cancellation.CancellationException
  * **A failed discovery is not cached.** Only an answer is. A provider that is down at start-up
  * would otherwise be remembered as "no discovery" for the lifetime of the process, and the
  * fallback would quietly become permanent.
+ *
+ * The same document names the provider's `issuer` — the value its tokens carry in `iss` and the one
+ * a relying service compares them against. Asked once together with `jwks_uri`; without discovery
+ * the inherited `{base}/realms/{realm}` shape stands in, for the same reason as the JWKS fallback.
  */
 internal class EndpointAddresses(
     private val client: HttpClient,
@@ -37,9 +41,13 @@ internal class EndpointAddresses(
     private val realm: String,
 ) {
     private val mutex = Mutex()
-    private var discovered: String? = null
+    private var discovered: JsonObject? = null
 
-    suspend fun jwksUrl(): String {
+    suspend fun jwksUrl(): String = document()?.text("jwks_uri") ?: certsUrl(base, realm)
+
+    suspend fun issuer(): String = document()?.text("issuer") ?: issuerUrl(base, realm)
+
+    private suspend fun document(): JsonObject? {
         discovered?.let { return it }
 
         return mutex.withLock {
@@ -54,20 +62,26 @@ internal class EndpointAddresses(
             val fromDiscovery =
                 try {
                     val body = client.get(discoveryUrl(base, realm)).bodyAsText()
-                    (Json.parseToJsonElement(body) as JsonObject)["jwks_uri"]
-                        ?.let { it as? JsonPrimitive }
-                        ?.content
-                        ?.takeIf { it.isNotBlank() }
+                    (Json.parseToJsonElement(body) as JsonObject).takeIf { it.text("jwks_uri") != null }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Throwable) {
                     null
                 }
 
-            fromDiscovery?.also { discovered = it } ?: certsUrl(base, realm)
+            fromDiscovery?.also { discovered = it }
         }
     }
+
+    private fun JsonObject.text(name: String): String? =
+        (this[name] as? JsonPrimitive)?.content?.takeIf { it.isNotBlank() }
 }
+
+/** `{base}/realms/{realm}` — the inherited issuer shape, used when a provider has no discovery. */
+internal fun issuerUrl(
+    base: String,
+    realm: String,
+): String = base.trimEnd('/') + href(ResourcesFormat(), RealmResource(realm))
 
 /** `{issuer}/.well-known/openid-configuration` — the address a client derives from the issuer. */
 internal fun discoveryUrl(

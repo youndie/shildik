@@ -68,10 +68,11 @@ internal class Provider(
         expiresIn: Duration = 5.minutes,
         email: String? = null,
         signWith: SigningKey? = null,
+        issuer: String? = "$url/realms/$realm",
     ): String {
         val claims =
             buildMap {
-                put("iss", JsonPrimitive("$url/realms/$realm"))
+                issuer?.let { put("iss", JsonPrimitive(it)) }
                 put("sub", JsonPrimitive("service-account-$clientId"))
                 put("azp", JsonPrimitive(clientId))
                 put(
