@@ -75,6 +75,17 @@ public class CreateClientUseCase(
                     "a public client needs at least one redirect_uri: sign-in is impossible without one"
                 }
 
+                // An app gets its code back through a private-use scheme, and the operating system
+                // hands that address to whichever installed app claimed the scheme first. A short
+                // `myapp:` is one any other app can claim too; a reversed domain name is one only
+                // its owner has a reason to use — RFC 8252 §7.1 says SHOULD, and refusing here is
+                // cheaper than a code delivered to somebody else's app.
+                val claimable = params.redirectUris.firstOrNull { params.public && privateUseSchemeWithoutDot(it) }
+                require(claimable == null) {
+                    "redirect_uri '$claimable' uses a private-use scheme that is not a reversed domain name " +
+                        "(RFC 8252 §7.1): another app can claim it — use something like com.example.app:/callback"
+                }
+
                 // A public client has no secret at all (api/protocol-oidc-browser.md §3).
                 // Generating one and not showing it would mean creating a secret known only to the
                 // database: useless and real at the same time.
@@ -429,4 +440,18 @@ public class ListTenantsUseCase(
     private val tenants: TenantRepository,
 ) : UseCase<Unit, List<Tenant>> {
     override suspend fun invoke(params: Unit): Result<List<Tenant>> = suspendRunCatching { tenants.list() }
+}
+
+/**
+ * `true` for an address whose scheme is neither `http` nor `https` and has no dot in it.
+ *
+ * Only the scheme is looked at: what follows it is the app's business, and both `com.example.app:/cb`
+ * and `com.example.app://cb` are in use.
+ */
+internal fun privateUseSchemeWithoutDot(uri: String): Boolean {
+    val colon = uri.indexOf(':')
+    if (colon <= 0) return false
+    val scheme = uri.substring(0, colon).lowercase()
+    if (scheme == "http" || scheme == "https") return false
+    return '.' !in scheme
 }
