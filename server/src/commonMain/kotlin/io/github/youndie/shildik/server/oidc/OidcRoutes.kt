@@ -32,7 +32,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.decodeURLPart
-import io.ktor.http.encodeURLParameter
 import io.ktor.resources.Resource
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
@@ -203,11 +202,7 @@ public fun Application.oidcRoutes(koin: Koin) {
             ),
         ).fold(
             onSuccess = { issued ->
-                val separator = if ('?' in issued.redirectUri) '&' else '?'
-                val state = issued.state?.let { "&state=" + it.encodeURLParameter() }.orEmpty()
-                call.respondRedirect(
-                    "${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + state,
-                )
+                call.respondRedirect(codeRedirect(issued.redirectUri, issued.code, issued.state))
             },
             onFailure = { error -> call.respondFailure(error, reporter) },
         )
@@ -232,11 +227,7 @@ public fun Application.oidcRoutes(koin: Koin) {
             ),
         ).fold(
             onSuccess = { issued ->
-                val separator = if ('?' in issued.redirectUri) '&' else '?'
-                val state = issued.state?.let { "&state=" + it.encodeURLParameter() }.orEmpty()
-                call.respondRedirect(
-                    "${issued.redirectUri}$separator" + "code=" + issued.code.encodeURLParameter() + state,
-                )
+                call.respondRedirect(codeRedirect(issued.redirectUri, issued.code, issued.state))
             },
             onFailure = { error -> call.respondFailure(error, reporter) },
         )
@@ -269,12 +260,7 @@ public fun Application.oidcRoutes(koin: Koin) {
                 when (outcome) {
                     is LoginOutcome.Success -> {
                         val issued = outcome.issued
-                        val separator = if ('?' in issued.redirectUri) '&' else '?'
-                        val clientState = issued.state?.let { "&state=" + it.encodeURLParameter() }.orEmpty()
-                        call.respondRedirect(
-                            "${issued.redirectUri}$separator" + "code=" +
-                                issued.code.encodeURLParameter() + clientState,
-                        )
+                        call.respondRedirect(codeRedirect(issued.redirectUri, issued.code, issued.state))
                     }
 
                     LoginOutcome.Wrong -> {
