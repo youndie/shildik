@@ -68,3 +68,4 @@ include(":distribution")
 // above: two executables in one module would share its dependencies, and both images would carry
 // both database drivers.
 include(":distribution-sqlite")
+include(":acceptance-kmp-oidc")

@@ -131,6 +131,21 @@ jobs:
       - name: A person signs in, and the page renders
         run: ./dev/image-smoke.sh http://localhost:8080 http://localhost:9000
 
+      # The app contour, accepted against somebody else's client (#66): kalinjul's
+      # kotlin-multiplatform-oidc — what a Compose Multiplatform app would use — walks discovery,
+      # PKCE, the form, exchange, refresh and end session, once on a loopback port nobody registered
+      # and once on a private-use scheme. A JVM program rather than a test task: it needs this
+      # container, and a test that skips itself without one is green when it has nothing to say.
+      # No konan cache: the module is JVM only and compiles nothing native.
+      - uses: youndie/sborka/.github/actions/setup-kotlin@v0.5.0.130
+
+      - name: An app signs in through kotlin-multiplatform-oidc
+        run: ./gradlew :acceptance-kmp-oidc:acceptance
+        env:
+          SHILDIK_PUBLIC_URL: http://localhost:8080
+          SHILDIK_MANAGEMENT_URL: http://localhost:9000
+          SHILDIK_BOOTSTRAP_TOKEN: bootstrap
+
       # The shutdown is the half of the lifecycle nobody watches, and on Kotlin/Native it is the
       # half that runs its steps in the opposite order from the JVM. The transcript is what says the
       # sequence ran at all: a process simply killed at the end of the grace period looks identical

@@ -20,6 +20,9 @@ clikt = "5.1.0"
 ktlint-plugin = "14.2.0"
 
 [libraries]
+# The client the app contour is accepted against (acceptance-kmp-oidc, #66). Pinned: a version bump of
+# somebody else's client is a new acceptance run, not a dependency refresh.
+kmp-oidc-core = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-core", version = "0.18.4" }
 kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
 kore-ktor = { module = "io.github.youndie:kore-ktor", version.ref = "kore" }
 
