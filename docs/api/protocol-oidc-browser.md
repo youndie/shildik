@@ -66,6 +66,14 @@ For the browser a client needs more than `clientId`, a secret hash and roles:
   wildcards: a `*` in a redirect_uri has historically been the main way to steal another client's
   code.
 
+  **One exception, for a public client only: a loopback address on any port.** A registered
+  `http://127.0.0.1/<path>` or `http://[::1]/<path>` — written without a port — matches the same
+  address with any port from 1 to 65535. An app on a person's machine signs in through the system
+  browser and listens on a port the operating system picks at that moment, and RFC 8252 §7.3 says
+  the provider MUST accept it. Nothing else is relaxed: `localhost` is a name and can be rebound
+  (§8.3), `https` is not a loopback listener, and the path and the query still match byte for byte.
+  The code exchange compares the requested address exactly, port included.
+
 Hence a rule worth writing down before implementing: **a public client cannot get a token through
 `client_credentials`.** Otherwise a front end whose "secret" everybody knows receives a service
 token.
