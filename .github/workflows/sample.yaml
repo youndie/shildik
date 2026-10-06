@@ -1,0 +1,31 @@
+name: Sample
+
+# The Compose sign-in sample is a build of its own (samples/compose-sign-in), so nothing in the
+# provider's build compiles it. This does, for every target a Linux runner can build: the desktop app,
+# the browser bundle and the Android APK. iOS needs a Mac and is built on demand there (README).
+#
+# A green run says the sample compiles against the client version shildik was accepted with — not that
+# a person can sign in with it. That is checked by hand per platform and dated in the README.
+on:
+  pull_request:
+    paths:
+      - samples/compose-sign-in/**
+      - .github/workflows/sample.yaml
+  push:
+    branches: [main]
+    paths:
+      - samples/compose-sign-in/**
+      - .github/workflows/sample.yaml
+
+concurrency:
+  group: sample-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: youndie/sborka/.github/actions/setup-kotlin@v0.5.0.130
+      - name: Desktop, browser and Android
+        run: ./gradlew -p samples/compose-sign-in :app:compileKotlinDesktop :app:wasmJsBrowserDistribution :android:assembleDebug
