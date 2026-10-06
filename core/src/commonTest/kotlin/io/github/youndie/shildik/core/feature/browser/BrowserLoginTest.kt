@@ -538,4 +538,72 @@ class BrowserLoginTest {
 
             assertEquals("access_denied", rejection(f.authorize(authorizeParams())).error)
         }
+
+    // ── Loopback redirects (RFC 8252 §7.3) ─────────────────────────────────────────────────────
+    // An app listens on a port the operating system picks at request time, so the registration
+    // names the address without one. Everything else about the address still matches exactly.
+
+    private fun appClient(public: Boolean = true) =
+        Client(
+            tenantId = tenantId,
+            clientId = "web-app",
+            secretHash = if (public) "" else "hash",
+            roles = emptySet(),
+            public = public,
+            redirectUris = setOf("http://127.0.0.1/cb", "http://[::1]/cb"),
+        )
+
+    @Test
+    fun `a loopback redirect is accepted on a port nobody registered`() =
+        runTest {
+            val f = fixture(client = appClient())
+
+            for (uri in listOf("http://127.0.0.1:53124/cb", "http://[::1]:61000/cb")) {
+                val issued = f.authorize(authorizeParams(redirectUri = uri)).getOrThrow()
+                assertNotNull(f.exchange(exchangeParams(issued.code, redirectUri = uri)).getOrNull(), uri)
+            }
+        }
+
+    @Test
+    fun `only the port is relaxed on a loopback redirect`() =
+        runTest {
+            val f = fixture(client = appClient())
+
+            for (uri in listOf(
+                "http://127.0.0.1:53124/cb2",
+                "http://127.0.0.1:53124/cb?next=/",
+                "http://localhost:53124/cb",
+                "https://127.0.0.1:53124/cb",
+                "http://127.0.0.1:80@evil.example/cb",
+                "http://127.0.0.1:0/cb",
+                "http://127.0.0.1:65536/cb",
+            )) {
+                assertEquals("invalid_request", rejection(f.authorize(authorizeParams(redirectUri = uri))).error, uri)
+            }
+        }
+
+    @Test
+    fun `a confidential client gets no port relaxation`() =
+        runTest {
+            val f = fixture(client = appClient(public = false))
+
+            assertEquals(
+                "invalid_request",
+                rejection(f.authorize(authorizeParams(redirectUri = "http://127.0.0.1:53124/cb"))).error,
+            )
+        }
+
+    @Test
+    fun `the code is exchanged only on the port it was issued for`() =
+        runTest {
+            val f = fixture(client = appClient())
+            val issued = f.authorize(authorizeParams(redirectUri = "http://127.0.0.1:53124/cb")).getOrThrow()
+
+            // The relaxation is about registration: a code that moved to another port moved to
+            // another listener, which is exactly what the exact comparison at exchange is for.
+            assertEquals(
+                "invalid_grant",
+                rejection(f.exchange(exchangeParams(issued.code, redirectUri = "http://127.0.0.1:53125/cb"))).error,
+            )
+        }
 }

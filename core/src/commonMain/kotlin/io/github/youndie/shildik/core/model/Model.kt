@@ -83,7 +83,23 @@ public data class Client(
         }
     }
 
-    public fun allowsRedirect(uri: String): Boolean = uri in redirectUris
+    /**
+     * Exact match, with one exception that only a public client gets: a registered loopback
+     * address without a port matches the same address on **any** port.
+     *
+     * An app signing a person in through the system browser listens on a port the operating system
+     * picks at the moment of the request, so no string registered in advance can name it — and
+     * RFC 8252 §7.3 says the provider MUST accept any port there. A fixed port in the registration
+     * is the workaround, and a fixed port is a sign-in that fails whenever something else holds it.
+     *
+     * The exception is as narrow as the RFC allows: only the literal `127.0.0.1` and `[::1]` (§8.3 —
+     * `localhost` is a name and can be rebound), only `http`, and only the port. The path and the
+     * query still match byte for byte, and a confidential client gets nothing: it is not an app on
+     * somebody's machine. The code exchange keeps comparing the requested address exactly, port
+     * included — the relaxation is about what was registered, not about a code changing hands.
+     */
+    public fun allowsRedirect(uri: String): Boolean =
+        uri in redirectUris || (public && LoopbackRedirect.withoutPort(uri)?.let { it in redirectUris } == true)
 
     public fun allowsAudience(resource: String): Boolean = resource in audiences
 
