@@ -18,6 +18,8 @@ document says what it cost — the failures in here are the reason the rules abo
 * **A service that consumes tokens** — [api/protocol-oidc-subset](api/protocol-oidc-subset.md),
   then [features/feature-service-auth](features/feature-service-auth.md).
 * **A front end that signs people in** — [api/protocol-oidc-browser](api/protocol-oidc-browser.md).
+* **An app that signs people in** (Android, iOS, desktop, Wasm) —
+  [api/protocol-oidc-app](api/protocol-oidc-app.md).
 * **Running one** — [thin-server.md](thin-server.md) first, then [cli.md](cli.md) and
   [api/endpoint-admin](api/endpoint-admin.md).
 * **Migrating from Keycloak** — [features/feature-user-import](features/feature-user-import.md),
