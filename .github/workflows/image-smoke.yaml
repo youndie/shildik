@@ -137,7 +137,7 @@ jobs:
       # and once on a private-use scheme. A JVM program rather than a test task: it needs this
       # container, and a test that skips itself without one is green when it has nothing to say.
       # No konan cache: the module is JVM only and compiles nothing native.
-      - uses: youndie/sborka/.github/actions/setup-kotlin@v0.5.0.130
+      - uses: youndie/sborka/.github/actions/setup-kotlin@v0.5.0.133
 
       - name: An app signs in through kotlin-multiplatform-oidc
         run: ./gradlew :acceptance-kmp-oidc:acceptance
