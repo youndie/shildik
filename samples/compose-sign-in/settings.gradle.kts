@@ -25,7 +25,7 @@ pluginManagement {
 plugins {
     // The portfolio's repositories with their filters and the shared `wip` catalog — the same Kotlin,
     // Compose and AGP the rest of it builds with.
-    id("io.github.youndie.sborka.settings") version "0.5.0.133"
+    id("io.github.youndie.sborka.settings") version "0.5.0.135"
 }
 
 dependencyResolutionManagement {
