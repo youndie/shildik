@@ -45,10 +45,9 @@ public const val SQLITE_POOL: Int = 2
  * `vfs` — and rejects the rest. `?foreign_keys=on` was tried first: the JVM driver took it, and
  * the native one refused the connection URL outright, panicking in Rust before the first log line.
  *
- * Foreign keys are enforced anyway where it matters. sqlx switches them on for every connection it
- * opens, so the native build — the one that ships — refuses a row pointing at a tenant that is not
- * there; the JVM driver leaves them off and nothing here can ask it otherwise. `SqliteStorageTest`
- * states both, per platform, rather than quietly asserting the weaker of the two.
+ * Foreign keys are enforced anyway, by the drivers: sqlx switches them on for every connection it
+ * opens on native, and since sqlx4k 1.18 the JVM driver does the same, so a row pointing at a tenant
+ * that is not there is refused on both. `SqliteStorageTest` asserts it on both platforms.
  *
  * The JVM driver also keeps a second parameter inside the **file name**: with
  * `?mode=rwc&foreign_keys=on` the database landed on disk as `local.db?mode=rwc`. `mode=rwc` is

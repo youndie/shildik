@@ -165,20 +165,12 @@ class SqliteStorageTest {
     @Test
     fun `foreign keys are enforced where the provider actually runs`() {
         runBlocking {
-            // **The two drivers disagree, and this test says so out loud.** On native — the build
-            // that ships — sqlx switches foreign keys on when it opens a connection, and a client
-            // pointing at a tenant that does not exist is refused. On the JVM the same insert
-            // succeeds: xerial leaves them off and sqlx4k offers no way to ask.
-            //
-            // It was written as one assertion for both, passed on the JVM, and failed on native
-            // with `FOREIGN KEY constraint failed` — which is how the difference was found at all.
-            // Asserting the weaker half on both platforms would have hidden it again.
-            if (foreignKeysEnforced) {
-                assertFails { clients.upsert(confidentialClient(tenantId = TenantId("ghost"))) }
-            } else {
-                clients.upsert(confidentialClient(tenantId = TenantId("ghost")))
-                assertEquals(1, clients.list(TenantId("ghost")).size)
-            }
+            // **The two drivers agree now, and this test says so on both.** Until sqlx4k 1.18 they
+            // did not: sqlx switched foreign keys on for every native connection, while on the JVM
+            // xerial left them off and the same insert succeeded. The test asserted each half per
+            // platform, which is how the change was noticed at all: 1.18 turns them on for the JVM
+            // too (sqlx4k 813320d1), and the JVM half went red.
+            assertFails { clients.upsert(confidentialClient(tenantId = TenantId("ghost"))) }
         }
     }
 
