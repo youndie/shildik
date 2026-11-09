@@ -8,7 +8,10 @@ sborka = "0.5.0.135"
 # /version. One number for the libraries and the Gradle plugin that generates the build identity:
 # they are published together, and a plugin from one version with a library from another would
 # compile and then disagree about the object it generates.
-kore = "0.1.4"
+# A bump here moves the libraries too, so it is a read of kore's backlog between the two numbers
+# rather than a plugin refresh: 0.1.4 → 0.1.15 moved the refusal onto a drain latch (B-61), took
+# Ktor's shutdown hook out of the start (B-60, B-63) and set the JVM floor of core/ktor at 21.
+kore = "0.1.15"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 cryptography = "0.6.0"
