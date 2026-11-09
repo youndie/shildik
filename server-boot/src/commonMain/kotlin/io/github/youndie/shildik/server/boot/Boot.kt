@@ -2,6 +2,7 @@ package io.github.youndie.shildik.server.boot
 
 import io.github.youndie.kore.ktor.EngineDrain
 import io.github.youndie.kore.lifecycle.AnnounceNotReady
+import io.github.youndie.kore.lifecycle.DrainGate
 import io.github.youndie.kore.lifecycle.ShutdownDeadlines
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.github.youndie.kore.lifecycle.runUntilSignal
@@ -69,7 +70,12 @@ public fun runShildik(
     // signal arrives at a process that has no sequence to run, Ktor stops the public engine from
     // its own hook, and the management engine and the Koin container — which owns the database
     // pool — are never closed at all. From outside that is indistinguishable from a clean stop.
-    server.start(wait = false)
+    //
+    // And not `start(wait = false)` either: that leaves Ktor's own shutdown handling armed. On the
+    // JVM it stops the engine at the signal while the announce is still running (and kore's
+    // `EngineDrain` refuses to be built beside it); on native a `SIGTERM` in the window before
+    // `runUntilSignal` met Ktor's handler and hung the process (kore B-63).
+    server.startForKore()
 
     runBlocking {
         runUntilSignal(
@@ -85,13 +91,19 @@ public fun runShildik(
             announce(AnnounceNotReady(server.readiness))
 
             // The public contour drains: in-flight token exchanges finish, new arrivals get 503.
-            drain(EngineDrain(server.public, deadlines.drain, deadlines.drain + 5.seconds))
+            // The 503 starts HERE, not at the announce: `server.draining` is the latch the public
+            // contour's refusal reads, and this stage opens it as its first act. Through the
+            // announce the pod is leaving the endpoints and still serves whatever reaches it.
+            drain(EngineDrain(server.public, deadlines.drain, deadlines.drain + 5.seconds, server.draining))
 
             // Management stops **after** the public contour and **before** the container, so no
             // probe can reach a repository whose pool has just been closed. It costs the kubelet a
             // few seconds of connection-refused at the very end, against a `/ready` that would
             // answer by throwing.
-            consumer(EngineDrain(server.management, deadlines.drain, deadlines.drain + 5.seconds))
+            //
+            // A gate of its own that nothing reads: the management contour has no refusal on
+            // purpose (see `managementModule`) and answers until its engine stops.
+            consumer(EngineDrain(server.management, deadlines.drain, deadlines.drain + 5.seconds, DrainGate()))
 
             // Last: the container owns the storage pool, and everything above it writes through it.
             // This is the close that `ApplicationStopping` would have run before the drain on
@@ -110,7 +122,9 @@ public fun runShildik(
  *
  * **The pre-drain wait is kore's default five seconds and stays there**, unlike the single-replica
  * services in this portfolio. `charts/shildik` runs two replicas, so those five seconds are the
- * window in which traffic actually moves to the other pod rather than five seconds of downtime.
+ * window in which traffic actually moves to the other pod rather than five seconds of downtime —
+ * and the pod keeps answering through them: the public contour refuses only once the drain has
+ * opened `ShildikServer.draining`, not when readiness falls.
  */
 private val DEADLINES =
     ShutdownDeadlines(

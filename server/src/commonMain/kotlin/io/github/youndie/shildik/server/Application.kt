@@ -3,6 +3,8 @@ package io.github.youndie.shildik.server
 import io.github.youndie.kore.health.ReadinessGate
 import io.github.youndie.kore.ktor.installKoreVersion
 import io.github.youndie.kore.ktor.installShutdownRefusal
+import io.github.youndie.kore.ktor.startForKore
+import io.github.youndie.kore.lifecycle.DrainGate
 import io.github.youndie.kore.version.BuildIdentity
 import io.github.youndie.shildik.core.config.ShildikConfig
 import io.github.youndie.shildik.core.di.coreModule
@@ -45,9 +47,46 @@ public class ShildikServer(
      * kore's announce stage, and a consumer assembling its own shutdown needs the same handle.
      */
     public val readiness: ReadinessGate = ReadinessGate(),
+    /**
+     * The latch the public contour's shutdown refusal reads, and the one the drain stage opens.
+     *
+     * **Not [readiness].** Readiness falls when the announce begins, and the announce exists to go
+     * on *serving* while the news that this pod is leaving reaches the load balancer: a sign-in that
+     * arrives in those seconds was routed here by a node that has not heard yet, and answering it is
+     * the point of waiting. Only the drain refuses. Gating the refusal on readiness — what this
+     * server did until kore B-61 — answered `503` to every request of the five-second announce.
+     *
+     * The caller hands **this instance** to kore's `EngineDrain` for [public]; a fresh gate there
+     * compiles and never opens the refusal.
+     */
+    public val draining: DrainGate = DrainGate(),
 ) {
     public val koin: Koin get() = application.koin
 
+    /**
+     * Starts both engines the way kore's ordered shutdown needs them started: Ktor's own shutdown
+     * hook off, and `wait = false`.
+     *
+     * On the JVM Ktor's hook is a `Runtime` hook the JVM runs concurrently with kore's, and it stops
+     * the engine the moment `SIGTERM` lands — while the announce is still running, so readiness
+     * becomes a refused connection instead of a `503`; `EngineDrain` refuses to be built beside it.
+     * On Kotlin/Native it is the window between Ktor installing its signal handler and kore taking
+     * the signal, in which a `SIGTERM` hung the process (kore B-63). Ktor reads the switch on the
+     * first `start()` in the process, so **management goes through this too**, not only the
+     * contour that drains.
+     *
+     * A process started this way has to go on to kore's `runUntilSignal`: on native kore's handler
+     * only records the signal, and nothing else stops the engines.
+     */
+    public fun startForKore() {
+        management.startForKore()
+        public.startForKore()
+    }
+
+    /**
+     * Starts both engines with Ktor's own shutdown handling, for callers that have no ordered
+     * shutdown — tests, a local run. `:server-boot` uses [startForKore].
+     */
     public fun start(wait: Boolean = false) {
         management.start(wait = false)
         public.start(wait = wait)
@@ -123,12 +162,13 @@ public fun shildikServer(
     }
 
     val readiness = ReadinessGate()
+    val draining = DrainGate()
 
     return ShildikServer(
         application = application,
         public =
             embeddedServer(CIO, port = config.publicPort) {
-                publicModule(koin, readiness, identity)
+                publicModule(koin, readiness, draining, identity)
                 observability()
             },
         management =
@@ -136,6 +176,7 @@ public fun shildikServer(
                 managementModule(koin, readiness, identity)
             },
         readiness = readiness,
+        draining = draining,
     )
 }
 
@@ -161,14 +202,20 @@ private fun Application.commonPlugins() {
 public fun Application.publicModule(
     koin: Koin,
     readiness: ReadinessGate = ReadinessGate(),
+    /** The same instance the drain stage opens — see [ShildikServer.draining]. */
+    draining: DrainGate = DrainGate(),
     identity: BuildIdentity? = null,
 ) {
     // BEFORE the routes. An interceptor installed later would let through every call that arrived
-    // first, and the one request this must not miss is the first sign-in after readiness went
-    // false. kore's own paths stay served — a 503 from a liveness probe restarts the pod in the
-    // middle of the shutdown it is reporting — and so does `/ready`, which is *supposed* to fail
-    // and says so in its own words.
-    installShutdownRefusal(isShuttingDown = { readiness.isShuttingDown })
+    // first, and the one request this must not miss is the first sign-in after the drain began.
+    // kore's own paths stay served — a 503 from a liveness probe restarts the pod in the middle of
+    // the shutdown it is reporting — and so does `/ready`, which is *supposed* to fail and says so
+    // in its own words.
+    //
+    // On the DRAIN, not on readiness. This line read `{ readiness.isShuttingDown }` until kore B-61
+    // and refused every sign-in from the first millisecond of the announce — the five seconds in
+    // which the other replica is still being told to take over, and this one is meant to serve.
+    installShutdownRefusal(draining)
     commonPlugins()
     healthRoutes(koin.get(), readiness)
     identity?.let { installKoreVersion(it) }
