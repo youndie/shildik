@@ -19,7 +19,7 @@ kotlinx-datetime = "0.8.0"
 koin = "4.2.2"
 sqlx4k = "1.18.0"
 kotlinx-io = "0.9.2"
-clikt = "5.1.0"
+clikt = "5.2.1"
 ktlint-plugin = "14.2.0"
 
 [libraries]
