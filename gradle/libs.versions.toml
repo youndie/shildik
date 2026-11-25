@@ -3,7 +3,7 @@
 # The shared build conventions, and the compiler with them: the `wip` catalog this release
 # publishes carries `kotlin`, so there is no Kotlin version in this file to drift from the rest
 # of the portfolio.
-sborka = "0.5.0.135"
+sborka = "0.5.0.136"
 # kore: the process lifecycle of a server binary — the ordered shutdown, the readiness latch and
 # /version. One number for the libraries and the Gradle plugin that generates the build identity:
 # they are published together, and a plugin from one version with a library from another would
@@ -11,15 +11,15 @@ sborka = "0.5.0.135"
 # A bump here moves the libraries too, so it is a read of kore's backlog between the two numbers
 # rather than a plugin refresh: 0.1.4 → 0.1.15 moved the refusal onto a drain latch (B-61), took
 # Ktor's shutdown hook out of the start (B-60, B-63) and set the JVM floor of core/ktor at 21.
-kore = "0.1.15"
+kore = "0.1.17"
 kotlinx-coroutines = "1.11.0"
-kotlinx-serialization = "1.12.0"
+kotlinx-serialization = "1.13.0"
 cryptography = "0.6.0"
 kotlinx-datetime = "0.8.0"
 koin = "4.2.2"
 sqlx4k = "1.18.0"
-kotlinx-io = "0.9.2"
-clikt = "5.1.0"
+kotlinx-io = "0.9.3"
+clikt = "5.2.1"
 ktlint-plugin = "14.2.0"
 
 [libraries]
